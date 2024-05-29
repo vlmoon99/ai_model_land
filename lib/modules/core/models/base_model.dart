@@ -1,11 +1,17 @@
 class BaseModel {
-  final String id;
+  final int? id;
+
+  final String source;
 
   final ModelFormat format;
 
   final ModelSourceType sourceType;
 
-  BaseModel({required this.id, required this.format, required this.sourceType});
+  BaseModel(
+      {this.id,
+      required this.source,
+      required this.format,
+      required this.sourceType});
 }
 
 enum ModelFormat { tflite, tfjs, pytorch, onnx, transformerjs }

@@ -1,3 +1,46 @@
+import 'package:ai_model_land/modules/core/models/base_model.dart';
+import 'package:ai_model_land/repositories/core_repository.dart';
+import 'package:collection/collection.dart';
+import 'package:rxdart/rxdart.dart';
+
 class AiModelLandLib {
-  //Top level API for developers
+  final BehaviorSubject<List<BaseModel>> modelStream =
+      BehaviorSubject<List<BaseModel>>();
+
+  final Repository<BaseModel> baseModelRepository;
+
+  AiModelLandLib(this.baseModelRepository) {
+    initAILib();
+  }
+
+  Future<bool> initAILib() async {
+    await baseModelRepository.readAll().then((baseModel) {
+      modelStream.add(baseModel);
+    });
+    return true;
+  }
+
+  Future addModel({required BaseModel baseModel}) async {
+    final isAlreadyExist = (await baseModelRepository.readAll())
+            .firstWhereOrNull((element) => element.id == baseModel.id) !=
+        null;
+    if (isAlreadyExist) {
+      throw Exception("This model is already exist");
+    }
+    final id =
+        // int.tryParse(
+        //         (await baseModelRepository.readAll()).lastOrNull?.id ?? '-1')! +
+        1;
+
+    final baseModeld = BaseModel(
+        id: id,
+        source: baseModel.source,
+        format: baseModel.format,
+        sourceType: baseModel.sourceType);
+
+    modelStream.value.add(baseModeld);
+    modelStream.add(modelStream.value);
+    baseModelRepository.saveAll(modelStream.value);
+    return baseModeld;
+  }
 }
