@@ -13,9 +13,11 @@ class AiModelLandLib {
     initAILib();
   }
 
+  //factory
+
   Future<bool> initAILib() async {
-    await baseModelRepository.readAll().then((baseModel) {
-      modelStream.add(baseModel);
+    await baseModelRepository.readAll().then((baseModels) {
+      modelStream.add(baseModels);
     });
     return true;
   }
