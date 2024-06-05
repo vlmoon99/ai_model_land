@@ -2,7 +2,7 @@ import 'package:ai_model_land/modules/core/models/base_model.dart';
 import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:ai_model_land/repositories/implements/local_storage.dart';
 import 'package:ai_model_land/repositories/implements/network_storage.dart';
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 
 class CoreRepository {
   final Map<ModelSourceType, Repository<BaseModel>> modalRepositories = {};
@@ -58,7 +58,12 @@ class CoreRepository {
     await modalRepositories[sourceType]?.delete(id);
   }
 
-  Future<void> deleteAll({required ModelSourceType sourceType}) async {
+  Future<void> deleteAllModels() async {
+    await modalRepositories.values.map((sourceType) => sourceType.deleteAll());
+  }
+
+  Future<void> deleteAllModelsForType(
+      {required ModelSourceType sourceType}) async {
     await modalRepositories[sourceType]?.deleteAll();
   }
 }

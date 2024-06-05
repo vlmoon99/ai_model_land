@@ -1,3 +1,4 @@
+import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -18,6 +19,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   final _aiModelLandPlugin = AiModelLand();
+  final _aiModelLandLib = AiModelLandLib.defaultInstance();
 
   @override
   void initState() {
@@ -31,8 +33,8 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      platformVersion =
-          await _aiModelLandPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      platformVersion = await _aiModelLandPlugin.getPlatformVersion() ??
+          'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
