@@ -1,5 +1,5 @@
 import 'package:ai_model_land/modules/core/models/base_model.dart';
-import 'package:ai_model_land/repositories/core_repository.dart';
+import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:collection/collection.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -29,11 +29,7 @@ class AiModelLandLib {
     if (isAlreadyExist) {
       throw Exception("This model is already exist");
     }
-    final id =
-        // int.tryParse(
-        //         (await baseModelRepository.readAll()).lastOrNull?.id ?? '-1')! +
-        1;
-
+    final id = ((await baseModelRepository.readAll()).lastOrNull?.id ?? -1) + 1;
     final baseModeld = BaseModel(
         id: id,
         source: baseModel.source,

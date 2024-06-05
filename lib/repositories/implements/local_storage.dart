@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:ai_model_land/constanta/storage_keys.dart';
 import 'package:ai_model_land/modules/core/models/base_model.dart';
-import 'package:ai_model_land/repositories/core_repository.dart';
+import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
