@@ -49,8 +49,9 @@ class CoreRepository {
     return modals;
   }
 
-  Future<void> update({required String key, required BaseModel item}) async {
-    await modalRepositories[item.sourceType]?.update(key, item);
+  Future<bool> update({required BaseModel item}) async {
+    await modalRepositories[item.sourceType]?.update(item);
+    return true;
   }
 
   Future<void> delete(

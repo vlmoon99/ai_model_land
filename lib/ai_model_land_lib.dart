@@ -1,6 +1,6 @@
 import 'package:ai_model_land/modules/core/models/base_model.dart';
 import 'package:ai_model_land/repositories/core_repository.dart';
-import 'package:ai_model_land/repositories/i_repository.dart';
+// import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:collection/collection.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -29,7 +29,7 @@ class AiModelLandLib {
   //   return true;
   // }
 
-  Future addModel({required BaseModel baseModel}) async {
+  Future<BaseModel> addModel({required BaseModel baseModel}) async {
     final isAlreadyExist =
         (await coreRepository.readAll(sourceType: baseModel.sourceType))
                 .firstWhereOrNull((element) => element.id == baseModel.id) !=
@@ -48,10 +48,9 @@ class AiModelLandLib {
         format: baseModel.format,
         sourceType: baseModel.sourceType);
 
-    modelStream.value.add(baseModeld);
-    modelStream.add(modelStream.value);
-    coreRepository.saveAll(
-        items: modelStream.value, sourceType: baseModel.sourceType);
+    // modelStream.value.add(baseModeld);
+    // modelStream.add(modelStream.value);
+    coreRepository.save(item: baseModeld);
     return baseModeld;
   }
 
@@ -69,5 +68,9 @@ class AiModelLandLib {
   Future<List<BaseModel>> readAllForType(
       {required ModelSourceType sourceType}) async {
     return await coreRepository.readAll(sourceType: sourceType);
+  }
+
+  Future<bool> updateForType({required BaseModel baseModel}) async {
+    return await coreRepository.update(item: baseModel);
   }
 }
