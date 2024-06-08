@@ -1,4 +1,5 @@
 import 'package:ai_model_land/ai_model_land_lib.dart';
+import 'package:ai_model_land/modules/core/models/base_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -19,7 +20,42 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   final _aiModelLandPlugin = AiModelLand();
-  final _aiModelLandLib = AiModelLandLib.defaultInstance();
+  final _aiModelLand = AiModelLandLib.defaultInstance();
+
+  final sorceController = TextEditingController();
+
+  var dropDawnFormat = ModelFormat.tfjs;
+  var dropDawnSourceType = ModelSourceType.local;
+
+  Future<BaseModel>? _modelFuture;
+
+  Future<List<BaseModel>>? _modelsLocal;
+  Future<List<BaseModel>>? _modelsNetwork;
+  Future<bool>? _isDelete;
+
+  Future<BaseModel> addModel() async {
+    final source = sorceController.text;
+    final format = dropDawnFormat;
+    final sourceType = dropDawnSourceType;
+
+    final model =
+        BaseModel(source: source, format: format, sourceType: sourceType);
+    return await _aiModelLand.addModel(baseModel: model);
+  }
+
+  Future<List<BaseModel>> seeLocal() async {
+    return await _aiModelLand.readAllForType(sourceType: ModelSourceType.local);
+  }
+
+  Future<List<BaseModel>> seeNetwork() async {
+    return await _aiModelLand.readAllForType(
+        sourceType: ModelSourceType.network);
+  }
+
+  Future<bool> deleteAllModelsForTypeLocal() async {
+    return await _aiModelLand.deleteAllModelsForType(
+        sourceType: ModelSourceType.local);
+  }
 
   @override
   void initState() {
@@ -27,11 +63,8 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
     try {
       platformVersion = await _aiModelLandPlugin.getPlatformVersion() ??
           'Unknown platform version';
@@ -39,9 +72,6 @@ class _MyAppState extends State<MyApp> {
       platformVersion = 'Failed to get platform version.';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
@@ -51,15 +81,178 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+    var repoTest = Scaffold(
+      appBar: AppBar(
+        title: const Text('Plugin example app'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Running on: $_platformVersion\n'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 150.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: sorceController,
+                    decoration: InputDecoration(labelText: 'Source'),
+                  ),
+                  SizedBox(height: 20),
+                  Text('Format'),
+                  DropdownButton<ModelFormat>(
+                    value: dropDawnFormat,
+                    onChanged: (ModelFormat? newValue) {
+                      setState(() {
+                        dropDawnFormat = newValue!;
+                      });
+                    },
+                    items: ModelFormat.values
+                        .map<DropdownMenuItem<ModelFormat>>(
+                            (ModelFormat value) {
+                      return DropdownMenuItem<ModelFormat>(
+                        value: value,
+                        child: Text(value.toString().split('.').last),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 20),
+                  Text('Sorce Type'),
+                  DropdownButton<ModelSourceType>(
+                    value: dropDawnSourceType,
+                    onChanged: (ModelSourceType? newValue) {
+                      setState(() {
+                        dropDawnSourceType = newValue!;
+                      });
+                    },
+                    items: ModelSourceType.values
+                        .map<DropdownMenuItem<ModelSourceType>>(
+                            (ModelSourceType value) {
+                      return DropdownMenuItem<ModelSourceType>(
+                        value: value,
+                        child: Text(value.toString().split('.').last),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _modelFuture = addModel();
+                });
+              },
+              child: Text('Add Model'),
+            ),
+            SizedBox(height: 20),
+            _modelFuture == null
+                ? Container()
+                : FutureBuilder<BaseModel>(
+                    future: _modelFuture,
+                    builder: (BuildContext context,
+                        AsyncSnapshot<BaseModel> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return SelectableText('Error: ${snapshot.error}');
+                      } else {
+                        return SelectableText(
+                            'Model added: ${snapshot.data.toString() ?? ''}');
+                      }
+                    },
+                  ),
+            SizedBox(height: 20),
+            Row(children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _modelsLocal = seeLocal();
+                  });
+                },
+                child: Text('See local repo'),
+              ),
+              SizedBox(height: 20),
+              _modelsLocal == null
+                  ? Container()
+                  : FutureBuilder<List<BaseModel>>(
+                      future: _modelsLocal,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<List<BaseModel>> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return SelectableText('Error: ${snapshot.error}');
+                        } else {
+                          return SelectableText(
+                              'Model added: ${snapshot.toString() ?? ''}');
+                        }
+                      },
+                    ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _modelsNetwork = seeNetwork();
+                  });
+                },
+                child: Text('See network repo'),
+              ),
+              SizedBox(height: 20),
+              _modelsNetwork == null
+                  ? Container()
+                  : FutureBuilder<List<BaseModel>>(
+                      future: _modelsNetwork,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<List<BaseModel>> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return SelectableText('Error: ${snapshot.error}');
+                        } else {
+                          return SelectableText(
+                              'Model added: ${snapshot.data ?? ''}');
+                        }
+                      },
+                    ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _isDelete = deleteAllModelsForTypeLocal();
+                  });
+                },
+                child: Text('Delete Model'),
+              ),
+              SizedBox(height: 20),
+              _isDelete == null
+                  ? Container()
+                  : FutureBuilder<bool>(
+                      future: _isDelete,
+                      builder:
+                          (BuildContext context, AsyncSnapshot<bool> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return SelectableText('Error: ${snapshot.error}');
+                        } else {
+                          return SelectableText(
+                              'Model delete: ${snapshot.data ?? ''}');
+                        }
+                      },
+                    ),
+            ]),
+          ],
         ),
       ),
+    );
+
+    return MaterialApp(
+      home: repoTest,
     );
   }
 }

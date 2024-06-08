@@ -20,6 +20,11 @@ class BaseModel {
       _$BaseModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$BaseModelToJson(this);
+
+  @override
+  String toString() {
+    return "{id $id , source $source, format $format, sourceType $sourceType }";
+  }
 }
 
 enum ModelFormat { tflite, tfjs, pytorch, onnx, transformerjs }

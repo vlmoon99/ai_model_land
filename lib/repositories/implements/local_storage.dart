@@ -35,12 +35,13 @@ class LocalStorage extends Repository<BaseModel> {
             .map((e) => BaseModel.fromJson(e as Map<String, dynamic>))
             .toList();
     modals.removeWhere((modal) => modal.id == id);
-    secureStorage.write(key: StorageKeys.local, value: jsonEncode(modals));
+    await secureStorage.write(
+        key: StorageKeys.local, value: jsonEncode(modals));
   }
 
   @override
   Future<void> deleteAll() async {
-    secureStorage.delete(key: StorageKeys.local);
+    await secureStorage.delete(key: StorageKeys.local);
   }
 
   @override
@@ -61,12 +62,16 @@ class LocalStorage extends Repository<BaseModel> {
 
   @override
   Future<List<BaseModel>> readAll() async {
-    final decodedData =
+    // Чтение данных из хранилища
+    final modals =
         (jsonDecode(await secureStorage.read(key: StorageKeys.local) ?? '[]')
-            as List<dynamic>);
-    return decodedData
-        .map((e) => BaseModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+                as List<dynamic>)
+            .map((e) => BaseModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+    if (modals == null || modals.isEmpty) {
+      return [];
+    }
+    return modals;
   }
 
   @override
@@ -77,16 +82,17 @@ class LocalStorage extends Repository<BaseModel> {
             .map((e) => BaseModel.fromJson(e as Map<String, dynamic>))
             .toList();
     modals.add(item);
-    secureStorage.write(key: StorageKeys.local, value: jsonEncode(item));
+    await secureStorage.write(
+        key: StorageKeys.local, value: jsonEncode(modals));
   }
 
   @override
   Future<void> saveAll(List<BaseModel> items) async {
-    secureStorage.write(key: StorageKeys.local, value: jsonEncode(items));
+    await secureStorage.write(key: StorageKeys.local, value: jsonEncode(items));
   }
 
   @override
-  Future<void> update(String key, BaseModel item) async {
+  Future<void> update(BaseModel item) async {
     final modals =
         (jsonDecode(await secureStorage.read(key: StorageKeys.local) ?? '[]')
                 as List<dynamic>)
@@ -94,6 +100,7 @@ class LocalStorage extends Repository<BaseModel> {
             .toList();
     modals.removeWhere((modal) => modal.id == item.id);
     modals.add(item);
-    secureStorage.write(key: StorageKeys.local, value: jsonEncode(item));
+    await secureStorage.write(
+        key: StorageKeys.local, value: jsonEncode(modals));
   }
 }
