@@ -22,8 +22,8 @@ class NetworkInteraction extends LocalNetworkService {
       if (await isExistModel.exists()) {
         throw Exception('File ${baseModel.nameFile} already exist in App');
       }
-      final fileOnDevice =
-          dio.download(baseModel.source, '$appPath/${baseModel.nameFile}');
+      final fileOnDevice = await dio.download(
+          baseModel.source, '$appPath/${baseModel.nameFile}');
       print('File download to $appPath/${baseModel.nameFile}');
       return true;
     } catch (e) {

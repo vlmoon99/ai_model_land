@@ -22,7 +22,7 @@ class _MyAppState extends State<MyApp> {
   final _aiModelLandPlugin = AiModelLand();
   final _aiModelLand = AiModelLandLib.defaultInstance();
 
-  // final sorceController = TextEditingController();
+  final sorceController = TextEditingController();
   final nameFileController = TextEditingController();
 
   var dropDawnFormat = ModelFormat.tfjs;
@@ -35,14 +35,12 @@ class _MyAppState extends State<MyApp> {
   Future<bool>? _isDelete;
   Future<bool>? _isDeleteNetwork;
 
-  String? selectedFilePath;
-
   Future<String?> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
       setState(() {
-        selectedFilePath = result.files.single.path;
+        sorceController.text = result.files.single.path!;
       });
     } else {
       return null;
@@ -51,7 +49,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<BaseModel> addModel() async {
     final model = BaseModel(
-        source: selectedFilePath!,
+        source: sorceController.text,
         nameFile: nameFileController.text,
         format: dropDawnFormat,
         sourceType: dropDawnSourceType);
@@ -114,16 +112,43 @@ class _MyAppState extends State<MyApp> {
               padding: const EdgeInsets.symmetric(horizontal: 150.0),
               child: Column(
                 children: [
-                  ElevatedButton(
-                    onPressed: pickFile,
-                    child: Text('Pick and Copy File'),
+                  Text('Sorce Type'),
+                  DropdownButton<ModelSourceType>(
+                    value: dropDawnSourceType,
+                    onChanged: (ModelSourceType? newValue) {
+                      setState(() {
+                        dropDawnSourceType = newValue!;
+                      });
+                    },
+                    items: ModelSourceType.values
+                        .map<DropdownMenuItem<ModelSourceType>>(
+                            (ModelSourceType value) {
+                      return DropdownMenuItem<ModelSourceType>(
+                        value: value,
+                        child: Text(value.toString().split('.').last),
+                      );
+                    }).toList(),
                   ),
                   SizedBox(height: 20),
-                  Text(
-                    selectedFilePath != null
-                        ? 'Selected File: $selectedFilePath'
-                        : 'No file selected.',
-                  ),
+                  dropDawnSourceType == ModelSourceType.local
+                      ? Column(
+                          children: [
+                            ElevatedButton(
+                              onPressed: pickFile,
+                              child: Text('Pick model File'),
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              sorceController.text != null
+                                  ? 'Selected File: ${sorceController.text}'
+                                  : 'No file selected.',
+                            ),
+                          ],
+                        )
+                      : TextField(
+                          controller: sorceController,
+                          decoration: InputDecoration(labelText: 'Input URL'),
+                        ),
                   // TextField(
                   //   controller: sorceController,
                   //   decoration: InputDecoration(labelText: 'Source'),
@@ -146,24 +171,6 @@ class _MyAppState extends State<MyApp> {
                         .map<DropdownMenuItem<ModelFormat>>(
                             (ModelFormat value) {
                       return DropdownMenuItem<ModelFormat>(
-                        value: value,
-                        child: Text(value.toString().split('.').last),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                  Text('Sorce Type'),
-                  DropdownButton<ModelSourceType>(
-                    value: dropDawnSourceType,
-                    onChanged: (ModelSourceType? newValue) {
-                      setState(() {
-                        dropDawnSourceType = newValue!;
-                      });
-                    },
-                    items: ModelSourceType.values
-                        .map<DropdownMenuItem<ModelSourceType>>(
-                            (ModelSourceType value) {
-                      return DropdownMenuItem<ModelSourceType>(
                         value: value,
                         child: Text(value.toString().split('.').last),
                       );
