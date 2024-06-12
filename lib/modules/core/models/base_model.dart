@@ -6,12 +6,14 @@ part 'base_model.g.dart';
 class BaseModel {
   final int? id;
   final String source;
+  final String nameFile;
   final ModelFormat format;
   final ModelSourceType sourceType;
 
   BaseModel({
     this.id,
     required this.source,
+    required this.nameFile,
     required this.format,
     required this.sourceType,
   });
