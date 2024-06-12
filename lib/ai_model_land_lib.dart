@@ -52,12 +52,12 @@ class AiModelLandLib {
         format: baseModel.format,
         sourceType: baseModel.sourceType);
 
-    // final addFileModel =
-    //     await aiService.addFileToAppDir(baseModel: processedBaseModeld);
-    // if (!addFileModel) {
-    //   print(
-    //       "${processedBaseModeld.nameFile} model exist alredy in core folder");
-    // }
+    final addFileModel =
+        await aiService.addFileToAppDir(baseModel: processedBaseModeld);
+    if (!addFileModel) {
+      print(
+          "${processedBaseModeld.nameFile} model exist alredy in core folder");
+    }
 
     // modelStream.value.add(baseModeld);
     // modelStream.add(modelStream.value);
