@@ -1,20 +1,26 @@
 import 'dart:io';
 
 import 'package:ai_model_land/modules/core/models/base_model.dart';
-import 'package:ai_model_land/services/local-network_file/local-network_service.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
-class NetworkInteraction extends LocalNetworkService {
+class NetworkService {
   final Dio dio;
 
-  NetworkInteraction({required this.dio});
+  NetworkService({required this.dio});
 
-  factory NetworkInteraction.defaultInstance() {
-    return NetworkInteraction(dio: Dio());
+  factory NetworkService.defaultInstance() {
+    return NetworkService(dio: Dio());
   }
-  @override
-  Future<bool> copyModelToAppDir({required BaseModel baseModel}) async {
+  Future<void> deleteModalFromAppDir({required BaseModel model}) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final appPath = appDir.path;
+    final fileOnDevice = File('$appPath/${model.nameFile}');
+    await fileOnDevice.delete();
+  }
+
+  Future<BaseModel> downloadModelToAppDir(
+      {required BaseModel baseModel}) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final appPath = appDir.path;
@@ -25,7 +31,13 @@ class NetworkInteraction extends LocalNetworkService {
       final fileOnDevice = await dio.download(
           baseModel.source, '$appPath/${baseModel.nameFile}');
       print('File download to $appPath/${baseModel.nameFile}');
-      return true;
+
+      return BaseModel(
+          id: baseModel.id,
+          source: '$appPath/${baseModel.nameFile}',
+          nameFile: baseModel.nameFile,
+          format: baseModel.format,
+          sourceType: baseModel.sourceType);
     } catch (e) {
       throw Exception('Error copying file: $e');
     }

@@ -1,3 +1,4 @@
+import 'package:ai_model_land/modules/core/models/base_model.dart';
 import 'package:ai_model_land/modules/core/models/task_request_model.dart';
 import 'package:ai_model_land/modules/core/models/task_response_model.dart';
 
@@ -12,5 +13,5 @@ abstract class ProviderAiService {
 
   Future restartModal();
 
-  Future addModal();
+  Future addModalFromFile({required BaseModel baseModel});
 }

@@ -2,21 +2,15 @@ import 'package:ai_model_land/modules/core/models/base_model.dart';
 import 'package:ai_model_land/repositories/core_repository.dart';
 import 'package:ai_model_land/services/ai_service.dart';
 import 'package:collection/collection.dart';
-import 'package:rxdart/rxdart.dart';
 
 class AiModelLandLib {
-  final BehaviorSubject<List<BaseModel>> modelStream =
-      BehaviorSubject<List<BaseModel>>();
-
   // final Repository<BaseModel> baseModelRepository;
 
   final CoreRepository coreRepository;
 
   final AiService aiService;
 
-  AiModelLandLib(this.coreRepository, this.aiService) {
-    // initAILib();
-  }
+  AiModelLandLib(this.coreRepository, this.aiService) {}
 
   //factory
   factory AiModelLandLib.defaultInstance() {
@@ -25,12 +19,6 @@ class AiModelLandLib {
       AiService.defaultInstance(),
     );
   }
-  // Future<bool> initAILib() async {
-  //   await coreRepository.readAll().then((baseModels) {
-  //     modelStream.add(baseModels);
-  //   });
-  //   return true;
-  // }
 
   Future<BaseModel> addModel({required BaseModel baseModel}) async {
     final isAlreadyExist =
@@ -52,17 +40,11 @@ class AiModelLandLib {
         format: baseModel.format,
         sourceType: baseModel.sourceType);
 
-    final addFileModel =
-        await aiService.addFileToAppDir(baseModel: processedBaseModeld);
-    if (!addFileModel) {
-      print(
-          "${processedBaseModeld.nameFile} model exist alredy in core folder");
-    }
+    final finalModelForAdd =
+        await aiService.fileInteraction(baseModel: processedBaseModeld);
 
-    // modelStream.value.add(baseModeld);
-    // modelStream.add(modelStream.value);
-    coreRepository.save(item: processedBaseModeld);
-    return processedBaseModeld;
+    coreRepository.save(item: finalModelForAdd);
+    return finalModelForAdd;
   }
 
   Future deleteModel({required BaseModel baseModel}) async {
