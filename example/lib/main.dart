@@ -1,61 +1,48 @@
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/models/base_model.dart';
+import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
+import 'package:ai_model_land_example/modalPage.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/services.dart';
-import 'package:ai_model_land/ai_model_land.dart';
+import 'addModelPage.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<AiModelProvider>(
+          create: (_) => AiModelProvider(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const HomePage(),
+      ),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _aiModelLandPlugin = AiModelLand();
-  final _aiModelLand = AiModelLandLib.defaultInstance();
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
-  final sorceController = TextEditingController();
-  final nameFileController = TextEditingController();
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
-  var dropDawnFormat = ModelFormat.tfjs;
-  var dropDawnSourceType = ModelSourceType.local;
-
-  Future<BaseModel>? _modelFuture;
-
+class _HomePageState extends State<HomePage> {
+  final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
   Future<List<BaseModel>>? _modelsLocal;
   Future<List<BaseModel>>? _modelsNetwork;
-  Future<bool>? _isDelete;
-  Future<bool>? _isDeleteNetwork;
-
-  Future<String?> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-    if (result != null) {
-      setState(() {
-        sorceController.text = result.files.single.path!;
-      });
-    } else {
-      return null;
-    }
-  }
-
-  Future<BaseModel> addModel() async {
-    final model = BaseModel(
-        source: sorceController.text,
-        nameFile: nameFileController.text,
-        format: dropDawnFormat,
-        sourceType: dropDawnSourceType);
-    return await _aiModelLand.addModel(baseModel: model);
-  }
-
   Future<List<BaseModel>> seeLocal() async {
     return await _aiModelLand.readAllForType(sourceType: ModelSourceType.local);
   }
@@ -65,262 +52,132 @@ class _MyAppState extends State<MyApp> {
         sourceType: ModelSourceType.network);
   }
 
-  Future<bool> deleteAllModelsForTypeLocal() async {
-    return await _aiModelLand.deleteAllModelsForType(
-        sourceType: ModelSourceType.local);
-  }
-
-  Future<bool> deleteAllModelsForTypeNetwork() async {
-    return await _aiModelLand.deleteAllModelsForType(
-        sourceType: ModelSourceType.network);
-  }
-
   @override
   void initState() {
     super.initState();
-    initPlatformState();
-  }
-
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    try {
-      platformVersion = await _aiModelLandPlugin.getPlatformVersion() ??
-          'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    _modelsLocal = seeLocal();
+    _modelsNetwork = seeNetwork();
   }
 
   @override
   Widget build(BuildContext context) {
-    var repoTest = Scaffold(
+    return Scaffold(
       appBar: AppBar(
-        title: const Text('Plugin example app'),
+        title: Text('Ai Model Land'),
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Running on: $_platformVersion\n'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 150.0),
-              child: Column(
-                children: [
-                  Text('Sorce Type'),
-                  DropdownButton<ModelSourceType>(
-                    value: dropDawnSourceType,
-                    onChanged: (ModelSourceType? newValue) {
-                      setState(() {
-                        dropDawnSourceType = newValue!;
-                      });
-                    },
-                    items: ModelSourceType.values
-                        .map<DropdownMenuItem<ModelSourceType>>(
-                            (ModelSourceType value) {
-                      return DropdownMenuItem<ModelSourceType>(
-                        value: value,
-                        child: Text(value.toString().split('.').last),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                  dropDawnSourceType == ModelSourceType.local
-                      ? Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: pickFile,
-                              child: Text('Pick model File'),
-                            ),
-                            SizedBox(height: 20),
-                            Text(
-                              sorceController.text != null
-                                  ? 'Selected File: ${sorceController.text}'
-                                  : 'No file selected.',
-                            ),
-                          ],
-                        )
-                      : TextField(
-                          controller: sorceController,
-                          decoration: InputDecoration(labelText: 'Input URL'),
-                        ),
-                  // TextField(
-                  //   controller: sorceController,
-                  //   decoration: InputDecoration(labelText: 'Source'),
-                  // ),
-                  // SizedBox(height: 20),
-                  TextField(
-                    controller: nameFileController,
-                    decoration: InputDecoration(labelText: 'Name File'),
-                  ),
-                  SizedBox(height: 20),
-                  Text('Format'),
-                  DropdownButton<ModelFormat>(
-                    value: dropDawnFormat,
-                    onChanged: (ModelFormat? newValue) {
-                      setState(() {
-                        dropDawnFormat = newValue!;
-                      });
-                    },
-                    items: ModelFormat.values
-                        .map<DropdownMenuItem<ModelFormat>>(
-                            (ModelFormat value) {
-                      return DropdownMenuItem<ModelFormat>(
-                        value: value,
-                        child: Text(value.toString().split('.').last),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _modelFuture = addModel();
-                });
-              },
-              child: Text('Add Model'),
-            ),
-            SizedBox(height: 20),
-            _modelFuture == null
+            Text("Local models:"),
+            _modelsLocal == null
                 ? Container()
-                : FutureBuilder<BaseModel>(
-                    future: _modelFuture,
+                : FutureBuilder<List<BaseModel>>(
+                    future: _modelsLocal,
                     builder: (BuildContext context,
-                        AsyncSnapshot<BaseModel> snapshot) {
+                        AsyncSnapshot<List<BaseModel>> snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const CircularProgressIndicator();
                       } else if (snapshot.hasError) {
                         return SelectableText('Error: ${snapshot.error}');
+                      } else if (snapshot.hasData &&
+                          snapshot.data!.isNotEmpty) {
+                        return Column(
+                          children: snapshot.data!.map((basemodel) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ModelPage(baseModel: basemodel),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                '${basemodel.nameFile}',
+                                style: const TextStyle(
+                                    color: const Color.fromARGB(255, 0, 0, 0)),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                side:
+                                    BorderSide(color: Colors.black, width: 0.5),
+                                backgroundColor:
+                                    Color.fromARGB(255, 255, 255, 255),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.zero, // No border radius
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
                       } else {
-                        return SelectableText(
-                            'Model added: ${snapshot.data.toString() ?? ''}');
+                        return Text('No local models found');
                       }
                     },
                   ),
             SizedBox(height: 20),
-            Row(children: [
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _modelsLocal = seeLocal();
-                  });
-                },
-                child: Text('See local repo'),
-              ),
-              SizedBox(height: 20),
-              _modelsLocal == null
-                  ? Container()
-                  : FutureBuilder<List<BaseModel>>(
-                      future: _modelsLocal,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<List<BaseModel>> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model added: ${snapshot.toString() ?? ''}');
-                        }
-                      },
-                    ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _modelsNetwork = seeNetwork();
-                  });
-                },
-                child: Text('See network repo'),
-              ),
-              SizedBox(height: 20),
-              _modelsNetwork == null
-                  ? Container()
-                  : FutureBuilder<List<BaseModel>>(
-                      future: _modelsNetwork,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<List<BaseModel>> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model added: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isDelete = deleteAllModelsForTypeLocal();
-                  });
-                },
-                child: Text('Delete all Models Local'),
-              ),
-              SizedBox(height: 20),
-              _isDelete == null
-                  ? Container()
-                  : FutureBuilder<bool>(
-                      future: _isDelete,
-                      builder:
-                          (BuildContext context, AsyncSnapshot<bool> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model delete: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isDeleteNetwork = deleteAllModelsForTypeNetwork();
-                  });
-                },
-                child: Text('Delete all Models Network'),
-              ),
-              SizedBox(height: 20),
-              _isDeleteNetwork == null
-                  ? Container()
-                  : FutureBuilder<bool>(
-                      future: _isDeleteNetwork,
-                      builder:
-                          (BuildContext context, AsyncSnapshot<bool> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model delete: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-            ]),
+            Text("Network models:"),
+            _modelsNetwork == null
+                ? Container()
+                : FutureBuilder<List<BaseModel>>(
+                    future: _modelsNetwork,
+                    builder: (BuildContext context,
+                        AsyncSnapshot<List<BaseModel>> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return SelectableText('Error: ${snapshot.error}');
+                      } else if (snapshot.hasData &&
+                          snapshot.data!.isNotEmpty) {
+                        return Column(
+                          children: snapshot.data!.map((basemodel) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ModelPage(baseModel: basemodel),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                '${basemodel.nameFile}',
+                                style: const TextStyle(
+                                    color: const Color.fromARGB(255, 0, 0, 0)),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                side:
+                                    BorderSide(color: Colors.black, width: 0.5),
+                                backgroundColor:
+                                    Color.fromARGB(255, 255, 255, 255),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.zero, // No border radius
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      } else {
+                        return Text('No network models found');
+                      }
+                    },
+                  ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const addModelPage()),
+                );
+              },
+              child: Text('Add Model'),
+            ),
           ],
         ),
       ),
-    );
-
-    return MaterialApp(
-      home: repoTest,
     );
   }
 }
