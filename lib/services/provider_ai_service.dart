@@ -1,6 +1,6 @@
-import 'package:ai_model_land/modules/core/models/base_model.dart';
-import 'package:ai_model_land/modules/core/models/task_request_model.dart';
-import 'package:ai_model_land/modules/core/models/task_response_model.dart';
+import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/modules/core/task_request_model.dart';
+import 'package:ai_model_land/modules/core/task_response_model.dart';
 
 abstract class ProviderAiService {
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request);
@@ -11,7 +11,9 @@ abstract class ProviderAiService {
 
   Future stopModal();
 
-  Future restartModal();
+  Future restartModal({required BaseModel baseModel});
 
   Future addModalFromFile({required BaseModel baseModel});
+
+  bool isModelLoaded();
 }

@@ -1,4 +1,8 @@
-import 'package:ai_model_land/modules/core/models/base_model.dart';
+import 'dart:async';
+
+import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/modules/core/task_request_model.dart';
+import 'package:ai_model_land/modules/core/task_response_model.dart';
 import 'package:ai_model_land/repositories/core_repository.dart';
 import 'package:ai_model_land/services/ai_service.dart';
 import 'package:collection/collection.dart';
@@ -20,6 +24,7 @@ class AiModelLandLib {
     );
   }
 
+// init future
   Future<BaseModel> addModel({required BaseModel baseModel}) async {
     final isAlreadyExist =
         (await coreRepository.readAll(sourceType: baseModel.sourceType))
@@ -46,6 +51,27 @@ class AiModelLandLib {
     coreRepository.save(item: finalModelForAdd);
     return finalModelForAdd;
   }
+  // service future
+
+  Future<bool> loadModel({required BaseModel baseModel}) async {
+    return await aiService.loadModelToProvider(baseModel: baseModel);
+  }
+
+  Future<void> stopModel({required BaseModel baseModel}) async {
+    await aiService.stopModel(baseModel: baseModel);
+  }
+
+  Future<TaskResponseModel> runTaskOnTheModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    return await aiService.runTaskOnTheModel(
+        request: request, baseModel: baseModel);
+  }
+
+  bool isModelLoaded({required BaseModel baseModel}) {
+    return aiService.isModelLoaded(baseModel: baseModel);
+  }
+
+  //Repo future
 
   Future deleteModel({required BaseModel baseModel}) async {
     await aiService.deleteFileFromAppDir(baseModel: baseModel);

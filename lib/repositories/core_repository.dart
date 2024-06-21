@@ -1,4 +1,4 @@
-import 'package:ai_model_land/modules/core/models/base_model.dart';
+import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:ai_model_land/repositories/implements/local_storage.dart';
 import 'package:ai_model_land/repositories/implements/network_storage.dart';
