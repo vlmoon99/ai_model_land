@@ -1,27 +1,65 @@
-import 'package:ai_model_land/modules/core/models/base_model.dart';
-import 'package:ai_model_land/modules/core/models/task_response_model.dart';
-import 'package:ai_model_land/modules/core/models/task_request_model.dart';
+import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/modules/core/task_request_model.dart';
+import 'package:ai_model_land/modules/core/task_response_model.dart';
+import 'package:ai_model_land/services/ai_provaiders/tensor_flow/tensorFlowLite.dart';
 import 'package:ai_model_land/services/file_interaction/local-network_service.dart';
+import 'package:ai_model_land/services/provider_ai_service.dart';
 
 class AiService {
   final NetworkService networkInteraction;
 
-  AiService({required this.networkInteraction}) {}
+  final Map<ModelFormat, ProviderAiService> provaiderService = {};
+
+  AiService(
+      {required this.networkInteraction,
+      required final TensorFlowLite tensorFlowProviderService}) {
+    provaiderService.putIfAbsent(
+        ModelFormat.tflite, () => tensorFlowProviderService);
+  }
 
   factory AiService.defaultInstance() {
     return AiService(
       networkInteraction: NetworkService.defaultInstance(),
+      tensorFlowProviderService: TensorFlowLite.defaultInstance(),
     );
   }
   //Base function from where you can run models in you project, you will need to pass the params
   //We will need to choose type of the source (which type of this model it is, tensorfolw js , pytorch, transofrmer js, tf lite , etc)
   //Also we need to choose the source (Network,Assets) and the path
-  TaskResponseModel runTaskOnTheModel(TaskRequestModel request) {
-    return TaskResponseModel();
+  Future<TaskResponseModel> runTaskOnTheModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    if (provaiderService[baseModel.format] == null) {
+      throw Exception('Incorrect Provider');
+    }
+
+    return await provaiderService[baseModel.format]!.runTaskOnTheModel(request);
   }
 
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
   void checkPlatformGPUAcceleratorPossibilities(String params) {}
+
+  Future<bool> loadModelToProvider({required BaseModel baseModel}) async {
+    if (provaiderService[baseModel.format] == null) {
+      throw Exception('Incorrect Provider');
+    }
+
+    if (baseModel.format == null) {
+      throw Exception('Incorrect Base Model');
+    }
+    return await provaiderService[baseModel.format]!
+        .addModalFromFile(baseModel: baseModel);
+  }
+
+  Future<void> stopModel({required BaseModel baseModel}) async {
+    if (provaiderService[baseModel.format] == null) {
+      throw Exception('Incorrect Provider');
+    }
+
+    if (baseModel.format == null) {
+      throw Exception('Incorrect Base Model');
+    }
+    await provaiderService[baseModel.format]!.stopModal();
+  }
 
   Future<BaseModel> downloadFileToAppDir({required BaseModel baseModel}) async {
     return await networkInteraction.downloadModelToAppDir(baseModel: baseModel);
@@ -38,5 +76,9 @@ class AiService {
 
   Future<void> deleteFileFromAppDir({required BaseModel baseModel}) async {
     await networkInteraction.deleteModalFromAppDir(model: baseModel);
+  }
+
+  bool isModelLoaded({required BaseModel baseModel}) {
+    return provaiderService[baseModel.format]!.isModelLoaded();
   }
 }
