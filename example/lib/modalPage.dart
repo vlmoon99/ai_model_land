@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:js_interop';
 import 'dart:typed_data';
-
+import 'package:image/image.dart' as img;
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/core/task_request_model.dart';
-import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_model.dart';
+import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart';
 
 class ModelPage extends StatefulWidget {
   final BaseModel baseModel;
@@ -21,9 +21,11 @@ class ModelPage extends StatefulWidget {
 
 class _ModelPageState extends State<ModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
-  Uint8List img = Uint8List(0);
+  Uint8List imgByteList = Uint8List(0);
 
-  late bool isModelLoaded;
+  File? lables;
+
+  // late bool isModelLoaded;
 
   Future<bool>? isAdd;
 
@@ -31,20 +33,55 @@ class _ModelPageState extends State<ModelPage> {
     return await _aiModelLand.loadModel(baseModel: baseModel);
   }
 
-  bool isModelLoadedF({required BaseModel baseModel}) {
-    return _aiModelLand.isModelLoaded(baseModel: baseModel);
-  }
+  // bool isModelLoadedF({required BaseModel baseModel}) {
+  //   return _aiModelLand.isModelLoaded(baseModel: baseModel);
+  // }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
     await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
   Future<void> runModel({required BaseModel baseModel}) async {
-    if (img.isEmpty) {
+    if (imgByteList.isEmpty) {
       throw Exception('Img not add');
     }
+    if (lables == null) {
+      throw Exception('Lables not add');
+    }
     await _aiModelLand.runTaskOnTheModel(
-        request: TensorFlowRequestModel(uint8list: img), baseModel: baseModel);
+        request: TensorFlowRequestModel(
+            uint8list: imgByteList, lablesFile: lables, threshold: 0.01),
+        baseModel: baseModel);
+  }
+
+  Uint8List imageToByteListFloat32(
+      img.Image image, int inputSize, double mean, double std) {
+    var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
+    var buffer = Float32List.view(convertedBytes.buffer);
+    int pixelIndex = 0;
+    for (var i = 0; i < inputSize; i++) {
+      for (var j = 0; j < inputSize; j++) {
+        var pixel = image.getPixel(j, i);
+        buffer[pixelIndex++] = (pixel.r - mean) / std;
+        buffer[pixelIndex++] = (pixel.g - mean) / std;
+        buffer[pixelIndex++] = (pixel.b - mean) / std;
+      }
+    }
+    return convertedBytes.buffer.asUint8List();
+  }
+
+  Future<String?> pickLables() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      final lablesFile = File(result.files.single.path!);
+
+      setState(() {
+        lables = lablesFile;
+      });
+    } else {
+      return null;
+    }
   }
 
   Future<String?> pickFile() async {
@@ -52,8 +89,12 @@ class _ModelPageState extends State<ModelPage> {
 
     if (result != null) {
       final listBity = await File(result.files.single.path!).readAsBytes();
+      img.Image image = img.decodeImage(listBity)!;
+      img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
+      final Uint8List last =
+          imageToByteListFloat32(resizedImage, 224, 127.5, 127.5);
       setState(() {
-        img = listBity;
+        imgByteList = last;
       });
     } else {
       return null;
@@ -63,7 +104,8 @@ class _ModelPageState extends State<ModelPage> {
   @override
   void initState() {
     super.initState();
-    isModelLoaded = isModelLoadedF(baseModel: widget.baseModel);
+    // isModelLoaded = isModelLoadedF(baseModel: widget.baseModel);
+    // isAdd = loadModel(baseModel: widget.baseModel);
   }
 
   @override
@@ -88,7 +130,7 @@ class _ModelPageState extends State<ModelPage> {
                     child: Text('Load model to provider'),
                   ),
                   SizedBox(width: 10),
-                  isAdd == null && !isModelLoaded
+                  isAdd == null
                       ? Text("Result: model not load")
                       : FutureBuilder(
                           future: isAdd,
@@ -99,7 +141,7 @@ class _ModelPageState extends State<ModelPage> {
                               return const CircularProgressIndicator();
                             } else if (snapshot.hasError) {
                               return SelectableText('Error: ${snapshot.error}');
-                            } else if (snapshot.data == true || isModelLoaded) {
+                            } else if (snapshot.data == true) {
                               return Text("Result: model was loaded");
                             } else {
                               return Text(
@@ -114,9 +156,9 @@ class _ModelPageState extends State<ModelPage> {
             ElevatedButton(
               onPressed: () {
                 stopModel(baseModel: widget.baseModel);
-                setState(() {
-                  isModelLoaded = false;
-                });
+                // setState(() {
+                //   isModelLoaded = false;
+                // });
               },
               child: Text('Stop model'),
             ),
@@ -131,13 +173,20 @@ class _ModelPageState extends State<ModelPage> {
               height: 10,
             ),
             ElevatedButton(
+              onPressed: pickLables,
+              child: Text('Pick model File (Lables)'),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            ElevatedButton(
               onPressed: () {
                 runModel(baseModel: widget.baseModel);
               },
               child: Text('Run model'),
             ),
-            Text('${img.last}'),
-            img.length == 0 ? Text("img not add") : Text('img was add'),
+            // Text('${img.last}'),
+            imgByteList.length == 0 ? Text("img not add") : Text('img was add'),
           ],
         ),
       ),

@@ -1,1 +1,1 @@
-class TaskResponseModel {}
+abstract class TaskResponseModel {}

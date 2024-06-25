@@ -22,6 +22,8 @@ class TensorFlowRequestModel implements TaskRequestModel {
 
   int? imgWidth;
 
+  double? threshold;
+
   @override
   File? lablesFile;
 
@@ -37,5 +39,6 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.imgWidth,
       this.lablesFile,
       this.lablesList,
-      this.uint8list});
+      this.uint8list,
+      this.threshold});
 }
