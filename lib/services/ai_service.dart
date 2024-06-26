@@ -43,9 +43,6 @@ class AiService {
       throw Exception('Incorrect Provider');
     }
 
-    if (baseModel.format == null) {
-      throw Exception('Incorrect Base Model');
-    }
     return await provaiderService[baseModel.format]!
         .addModalFromFile(baseModel: baseModel);
   }
@@ -74,8 +71,8 @@ class AiService {
     }
   }
 
-  Future<void> deleteFileFromAppDir({required BaseModel baseModel}) async {
-    await networkInteraction.deleteModalFromAppDir(model: baseModel);
+  Future<void> deleteModel({required BaseModel baseModel}) async {
+    await networkInteraction.deleteModal(model: baseModel);
   }
 
   bool isModelLoaded({required BaseModel baseModel}) {

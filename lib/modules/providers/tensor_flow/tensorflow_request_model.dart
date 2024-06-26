@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:ai_model_land/modules/core/task_request_model.dart';
 
 class TensorFlowRequestModel implements TaskRequestModel {
+  bool? async;
+
   @override
   Uint16List? uint16list;
 
@@ -40,5 +42,6 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.lablesFile,
       this.lablesList,
       this.uint8list,
-      this.threshold});
+      this.threshold,
+      this.async});
 }

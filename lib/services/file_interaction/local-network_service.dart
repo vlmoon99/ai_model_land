@@ -12,10 +12,8 @@ class NetworkService {
   factory NetworkService.defaultInstance() {
     return NetworkService(dio: Dio());
   }
-  Future<void> deleteModalFromAppDir({required BaseModel model}) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final appPath = appDir.path;
-    final fileOnDevice = File('$appPath/${model.nameFile}');
+  Future<void> deleteModal({required BaseModel model}) async {
+    final fileOnDevice = File('${model.source}');
     await fileOnDevice.delete();
   }
 
@@ -24,17 +22,18 @@ class NetworkService {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final appPath = appDir.path;
-      final isExistModel = File('$appPath/${baseModel.nameFile}');
+      final fullNameModel = '${baseModel.nameFile}.${baseModel.format}';
+      final isExistModel = File('$appPath/$fullNameModel');
       if (await isExistModel.exists()) {
-        throw Exception('File ${baseModel.nameFile} already exist in App');
+        throw Exception('File $fullNameModel already exist in App');
       }
-      final fileOnDevice = await dio.download(
-          baseModel.source, '$appPath/${baseModel.nameFile}');
-      print('File download to $appPath/${baseModel.nameFile}');
+      final fileOnDevice =
+          await dio.download(baseModel.source, '$appPath/$fullNameModel');
+      print('File download to $appPath/$fullNameModel');
 
       return BaseModel(
           id: baseModel.id,
-          source: '$appPath/${baseModel.nameFile}',
+          source: '$appPath/$fullNameModel',
           nameFile: baseModel.nameFile,
           format: baseModel.format,
           sourceType: baseModel.sourceType);

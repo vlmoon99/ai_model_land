@@ -29,8 +29,8 @@ class TensorFlowLite extends ProviderAiService {
       final file = File('${baseModel.source}');
       if (await file.exists()) {
         _interpreter = Interpreter.fromFile(file);
-        _isolateInterpreter =
-            await IsolateInterpreter.create(address: _interpreter.address);
+        getInformationModel();
+
         print('interpreter was create successful');
         return true;
       } else {
@@ -67,15 +67,21 @@ class TensorFlowLite extends ProviderAiService {
   @override
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) async {
     try {
-      var outputTensor;
+      late List<dynamic> outputTensor;
       if (_interpreter.isDeleted) {
         throw Exception('Interpreter not found');
       }
       final tensorRequest = request as TensorFlowRequestModel;
-      getInformationModel();
 
       if (tensorRequest.uint8list == null) {
         throw Exception('uint8list is absent');
+      }
+
+      if (_inputShapes.isEmpty &&
+          _inputTypes.isEmpty &&
+          _outputShapes.isEmpty &&
+          _outputTypes.isEmpty) {
+        throw Exception('No information about model');
       }
 
       // final romalUint8List =
@@ -89,50 +95,56 @@ class TensorFlowLite extends ProviderAiService {
       // final input = ByteConversionUtils.convertObjectToBytes(
       //         tensorRequest.uint8list!, _inputTypes[0])
       //     .buffer;
-      if (_outputTypes[0]._name.contains("float32")) {
-        outputTensor =
-            List.filled(_outputShapes[0][1], 0.0).reshape(_outputShapes[0]);
-      } else if (_outputTypes[0]._name.contains("int")) {
-        outputTensor =
-            List.filled(_outputShapes[0][1], 0).reshape(_outputShapes[0]);
+      // final Map<int, List<dynamic>> outputTensors = creatOutputTensors();
+
+      if (_outputTypes.toString().contains("float")) {
+        outputTensor = List.filled(
+                calculateTotalNumbList(outputShapes: _outputShapes[0]), 0.0)
+            .reshape(_outputShapes[0]);
+      } else if (_outputTypes.toString().contains("int")) {
+        outputTensor = List.filled(
+                calculateTotalNumbList(outputShapes: _outputShapes[0]), 0)
+            .reshape(_outputShapes[0]);
       }
-      await _isolateInterpreter.run(
-          tensorRequest.uint8list!.buffer, outputTensor);
-      if (tensorRequest.lablesFile != null &&
-          await tensorRequest.lablesFile!.exists() &&
-          tensorRequest.threshold != null) {
-        final List<String> lableList =
-            await convertFileToList(lables: tensorRequest.lablesFile!);
-        final List<double> outputList = outputTensor[0];
-        final Map<String, double> pridict = getPredict(
-            lableList: lableList,
-            outputList: outputList,
-            threshold: tensorRequest.threshold!);
-        return TensorFlowResponsModel(predictWithLables: pridict);
+      if (tensorRequest.async == true) {
+        _isolateInterpreter =
+            await IsolateInterpreter.create(address: _interpreter.address);
+        await _isolateInterpreter.run(
+            tensorRequest.uint8list!.buffer, outputTensor);
       } else {
-        return TensorFlowResponsModel(predict: outputTensor[0]);
+        _interpreter.run(tensorRequest.uint8list!.buffer, outputTensor);
       }
+      // if (tensorRequest.lablesFile != null &&
+      //     await tensorRequest.lablesFile!.exists() &&
+      //     tensorRequest.threshold != null) {
+      //   final List<String> lableList =
+      //       await convertFileToList(lables: tensorRequest.lablesFile!);
+      //   final List<double> outputList = outputTensor[0];
+      //   final Map<String, double> pridict = getPredict(
+      //       lableList: lableList,
+      //       outputList: outputList,
+      //       threshold: tensorRequest.threshold!);
+      //   return TensorFlowResponsModel(predictWithLables: pridict);
+      // } else {
+      //   return TensorFlowResponsModel(predict: outputTensor[0]);
+      // }
+      throw UnimplementedError();
     } catch (e) {
       throw Exception("Model no run successful: $e");
     }
   }
 
   void getInformationModel() {
-    if (_inputShapes.isEmpty &&
-        _inputTypes.isEmpty &&
-        _outputShapes.isEmpty &&
-        _outputTypes.isEmpty) {
-      var inputTensors = _interpreter.getInputTensors();
-      inputTensors.forEach((tensor) {
-        _inputShapes.add(tensor.shape);
-        _inputTypes.add(tensor.type);
-      });
-      var outputTensors = _interpreter.getOutputTensors();
-      outputTensors.forEach((tensor) {
-        _outputShapes.add(tensor.shape);
-        _outputTypes.add(tensor.type);
-      });
-    }
+    var inputTensors = _interpreter.getInputTensors();
+    inputTensors.forEach((tensor) {
+      _inputShapes.add(tensor.shape);
+      _inputTypes.add(tensor.type);
+    });
+    var outputTensors = _interpreter.getOutputTensors();
+    outputTensors.forEach((tensor) {
+      _outputShapes.add(tensor.shape);
+      _outputTypes.add(tensor.type);
+    });
   }
 
   @override
@@ -196,5 +208,27 @@ class TensorFlowLite extends ProviderAiService {
       for (var entry in filteredMap) entry.key: entry.value
     };
     return resultMap;
+  }
+
+  int calculateTotalNumbList({required List<int> outputShapes}) {
+    return outputShapes.reduce((a, b) => a * b);
+  }
+
+  Map<int, List<dynamic>> creatOutputTensors() {
+    Map<int, List<dynamic>> outputTensor = {};
+    TensorType outputTensorType;
+    for (int i = 0; i < _outputTypes.length; i++) {
+      outputTensorType = _outputTypes[i];
+      if (outputTensorType.toString().contains("float")) {
+        outputTensor[i] = List.filled(
+                calculateTotalNumbList(outputShapes: _outputShapes[i]), 0.0)
+            .reshape(_outputShapes[i]);
+      } else if (outputTensorType.toString().contains("int")) {
+        outputTensor[i] = List.filled(
+                calculateTotalNumbList(outputShapes: _outputShapes[i]), 0)
+            .reshape(_outputShapes[i]);
+      }
+    }
+    return outputTensor;
   }
 }

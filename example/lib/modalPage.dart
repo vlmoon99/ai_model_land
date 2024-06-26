@@ -37,6 +37,10 @@ class _ModelPageState extends State<ModelPage> {
   //   return _aiModelLand.isModelLoaded(baseModel: baseModel);
   // }
 
+  Future<void> deleteMoodel({required BaseModel baseModel}) async {
+    await _aiModelLand.deleteModel(baseModel: baseModel);
+  }
+
   Future<void> stopModel({required BaseModel baseModel}) async {
     await _aiModelLand.stopModel(baseModel: baseModel);
   }
@@ -46,7 +50,7 @@ class _ModelPageState extends State<ModelPage> {
       throw Exception('Img not add');
     }
     if (lables == null) {
-      throw Exception('Lables not add');
+      print('Lables not add');
     }
     await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(
@@ -184,6 +188,15 @@ class _ModelPageState extends State<ModelPage> {
                 runModel(baseModel: widget.baseModel);
               },
               child: Text('Run model'),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            ElevatedButton(
+              onPressed: () {
+                deleteMoodel(baseModel: widget.baseModel);
+              },
+              child: Text('Delete model'),
             ),
             // Text('${img.last}'),
             imgByteList.length == 0 ? Text("img not add") : Text('img was add'),
