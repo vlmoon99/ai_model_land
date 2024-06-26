@@ -28,7 +28,8 @@ class AiModelLandLib {
   Future<BaseModel> addModel({required BaseModel baseModel}) async {
     final isAlreadyExist =
         (await coreRepository.readAll(sourceType: baseModel.sourceType))
-                .firstWhereOrNull((element) => element.id == baseModel.id) !=
+                .firstWhereOrNull(
+                    (element) => element.source == baseModel.source) !=
             null;
     if (isAlreadyExist) {
       throw Exception("This model is already exist");
@@ -71,11 +72,13 @@ class AiModelLandLib {
     return aiService.isModelLoaded(baseModel: baseModel);
   }
 
-  //Repo future
-
-  Future deleteModel({required BaseModel baseModel}) async {
-    await aiService.deleteFileFromAppDir(baseModel: baseModel);
+  Future<void> deleteModel({required BaseModel baseModel}) async {
+    await coreRepository.delete(
+        id: baseModel.id.toString(), sourceType: baseModel.sourceType);
+    await aiService.deleteModel(baseModel: baseModel);
   }
+
+  //Repo future
 
   Future<bool> deleteAllModelsForType(
       {required ModelSourceType sourceType}) async {

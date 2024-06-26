@@ -29,6 +29,13 @@ class BaseModel {
   }
 }
 
-enum ModelFormat { tflite, tfjs, pytorch, onnx, transformerjs }
+enum ModelFormat {
+  tflite; // future implement  tfjs, pytorch, onnx, transformerjs
+
+  @override
+  String toString() {
+    return name;
+  }
+}
 
 enum ModelSourceType { local, network }

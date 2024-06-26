@@ -22,7 +22,7 @@ class _addModelPageState extends State<addModelPage> {
   final sorceController = TextEditingController();
   final nameFileController = TextEditingController();
 
-  var dropDawnFormat = ModelFormat.tfjs;
+  var dropDawnFormat = ModelFormat.tflite;
   var dropDawnSourceType = ModelSourceType.local;
 
   Future<BaseModel>? _modelFuture;
