@@ -7,13 +7,15 @@ abstract class ProviderAiService {
 
   void checkPlatformGPUAcceleratorPossibilities(String params);
 
-  Future deleteModal();
+  Future deleteModel();
 
-  Future stopModal();
+  Future stopModel();
 
-  Future restartModal({required BaseModel baseModel});
+  Future restartModel(
+      {required TaskRequestModel request, required BaseModel baseModel});
 
-  Future addModalFromFile({required BaseModel baseModel});
+  Future addModel(
+      {required TaskRequestModel request, required BaseModel baseModel});
 
   bool isModelLoaded();
 }

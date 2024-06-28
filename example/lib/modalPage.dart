@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:ai_model_land_example/main.dart';
 import 'package:image/image.dart' as img;
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land/modules/core/task_request_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart';
 
 class ModelPage extends StatefulWidget {
   final BaseModel baseModel;
@@ -23,14 +22,16 @@ class _ModelPageState extends State<ModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
   Uint8List imgByteList = Uint8List(0);
 
-  File? lables;
+  String? lables;
 
   // late bool isModelLoaded;
 
   Future<bool>? isAdd;
 
   Future<bool> loadModel({required BaseModel baseModel}) async {
-    return await _aiModelLand.loadModel(baseModel: baseModel);
+    return await _aiModelLand.loadModel(
+        request: TensorFlowRequestModel(loadModelWay: LoadModelWay.fromFile),
+        baseModel: baseModel);
   }
 
   // bool isModelLoadedF({required BaseModel baseModel}) {
@@ -38,7 +39,7 @@ class _ModelPageState extends State<ModelPage> {
   // }
 
   Future<void> deleteMoodel({required BaseModel baseModel}) async {
-    await _aiModelLand.deleteModel(baseModel: baseModel);
+    await _aiModelLand.deleteModel(baseModel: baseModel, fromDevice: false);
   }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
@@ -54,7 +55,7 @@ class _ModelPageState extends State<ModelPage> {
     }
     await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(
-            uint8list: imgByteList, lablesFile: lables, threshold: 0.01),
+            data: imgByteList, lablesFile: lables, threshold: 0.01),
         baseModel: baseModel);
   }
 
@@ -78,10 +79,8 @@ class _ModelPageState extends State<ModelPage> {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
-      final lablesFile = File(result.files.single.path!);
-
       setState(() {
-        lables = lablesFile;
+        lables = result.files.single.path!;
       });
     } else {
       return null;
@@ -108,8 +107,6 @@ class _ModelPageState extends State<ModelPage> {
   @override
   void initState() {
     super.initState();
-    // isModelLoaded = isModelLoadedF(baseModel: widget.baseModel);
-    // isAdd = loadModel(baseModel: widget.baseModel);
   }
 
   @override
@@ -148,8 +145,7 @@ class _ModelPageState extends State<ModelPage> {
                             } else if (snapshot.data == true) {
                               return Text("Result: model was loaded");
                             } else {
-                              return Text(
-                                  "Result: some gone wrong, try add one more time");
+                              return Text("Result: try add again");
                             }
                           },
                         ),
@@ -160,6 +156,9 @@ class _ModelPageState extends State<ModelPage> {
             ElevatedButton(
               onPressed: () {
                 stopModel(baseModel: widget.baseModel);
+                setState(() {
+                  isAdd = Future.value(false);
+                });
                 // setState(() {
                 //   isModelLoaded = false;
                 // });
@@ -173,6 +172,7 @@ class _ModelPageState extends State<ModelPage> {
               onPressed: pickFile,
               child: Text('Pick model File (IMG)'),
             ),
+            imgByteList.length == 0 ? Text("img not add") : Text('img was add'),
             SizedBox(
               height: 10,
             ),
@@ -180,6 +180,7 @@ class _ModelPageState extends State<ModelPage> {
               onPressed: pickLables,
               child: Text('Pick model File (Lables)'),
             ),
+            lables == null ? Text("img not add") : Text('img was add'),
             SizedBox(
               height: 10,
             ),
@@ -195,11 +196,11 @@ class _ModelPageState extends State<ModelPage> {
             ElevatedButton(
               onPressed: () {
                 deleteMoodel(baseModel: widget.baseModel);
+                Navigator.pop(context, true);
               },
               child: Text('Delete model'),
             ),
             // Text('${img.last}'),
-            imgByteList.length == 0 ? Text("img not add") : Text('img was add'),
           ],
         ),
       ),

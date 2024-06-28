@@ -12,7 +12,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 class TensorFlowLite extends ProviderAiService {
   late Interpreter _interpreter;
-  late IsolateInterpreter _isolateInterpreter;
+  IsolateInterpreter? _isolateInterpreter;
   var _inputShapes = [];
   var _inputTypes = [];
   var _outputShapes = [];
@@ -24,18 +24,55 @@ class TensorFlowLite extends ProviderAiService {
   }
 
   @override
-  Future<bool> addModalFromFile({required BaseModel baseModel}) async {
+  Future<bool> addModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
-      final file = File('${baseModel.source}');
-      if (await file.exists()) {
-        _interpreter = Interpreter.fromFile(file);
-        getInformationModel();
-
-        print('interpreter was create successful');
-        return true;
+      final tensorRequest = request as TensorFlowRequestModel;
+      if (tensorRequest.loadModelWay != null) {
+        switch (tensorRequest.loadModelWay!) {
+          case LoadModelWay.fromFile:
+            {
+              final file = File(baseModel.source);
+              if (await file.exists()) {
+                _interpreter = Interpreter.fromFile(file);
+                getInformationModel();
+                print('interpreter by file was create successful');
+                return true;
+              } else {
+                print('File not exist');
+              }
+            }
+          case LoadModelWay.fromAssets:
+            {
+              _interpreter = await Interpreter.fromAsset(baseModel.source);
+              print('interpreter by asset was create successful');
+              return true;
+            }
+          case LoadModelWay.fromBuffer:
+            {
+              if (request.uint8list != null) {
+                _interpreter = Interpreter.fromBuffer(request.uint8list!);
+                print('interpreter by asset was create successful');
+                return true;
+              } else {
+                print('Not add uint8list for buffer');
+                return false;
+              }
+            }
+          case LoadModelWay.fromAddress:
+            {
+              if (request.adressModel != null) {
+                _interpreter =
+                    await Interpreter.fromAddress(request.adressModel!);
+                print('interpreter by asset was create successful');
+                return true;
+              } else {
+                print('Not add adress model for adress');
+              }
+            }
+        }
       } else {
-        print("file not exist");
-        return false;
+        throw Exception("Not choose way add model");
       }
     } catch (e) {
       print("Error while creating interpreter: $e");
@@ -49,16 +86,17 @@ class TensorFlowLite extends ProviderAiService {
   }
 
   @override
-  Future deleteModal() {
+  Future deleteModel() {
     // TODO: implement deleteModal
     throw UnimplementedError();
   }
 
   @override
-  Future<void> restartModal({required BaseModel baseModel}) async {
+  Future<void> restartModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
       _interpreter.close();
-      _interpreter = await Interpreter.fromFile(File(baseModel.source));
+      await addModel(request: request, baseModel: baseModel);
     } catch (e) {
       throw Exception("Model no restart successful: $e");
     }
@@ -67,14 +105,14 @@ class TensorFlowLite extends ProviderAiService {
   @override
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) async {
     try {
-      late List<dynamic> outputTensor;
       if (_interpreter.isDeleted) {
         throw Exception('Interpreter not found');
       }
+
       final tensorRequest = request as TensorFlowRequestModel;
 
-      if (tensorRequest.uint8list == null) {
-        throw Exception('uint8list is absent');
+      if (tensorRequest.data == null) {
+        throw Exception('Data is absent');
       }
 
       if (_inputShapes.isEmpty &&
@@ -84,51 +122,32 @@ class TensorFlowLite extends ProviderAiService {
         throw Exception('No information about model');
       }
 
-      // final romalUint8List =
-      //     normalizudFutureForUint8Lit(uint8List: tensorRequest.uint8list!);
-      // var list = [];
-      // print("${tensorRequest.uint8list!.lengthInBytes}");
-      // Float32List.fromList(tensorRequest.uint8list!.toList());
+      final List<dynamic> outputTensor = creatOutputTensorsSingl();
 
-      // final input = ByteConversionUtils.convertBytesToObject(
-      //     tensorRequest.uint8list!, _inputTypes[0], _inputShapes[0]);
-      // final input = ByteConversionUtils.convertObjectToBytes(
-      //         tensorRequest.uint8list!, _inputTypes[0])
-      //     .buffer;
-      // final Map<int, List<dynamic>> outputTensors = creatOutputTensors();
-
-      if (_outputTypes.toString().contains("float")) {
-        outputTensor = List.filled(
-                calculateTotalNumbList(outputShapes: _outputShapes[0]), 0.0)
-            .reshape(_outputShapes[0]);
-      } else if (_outputTypes.toString().contains("int")) {
-        outputTensor = List.filled(
-                calculateTotalNumbList(outputShapes: _outputShapes[0]), 0)
-            .reshape(_outputShapes[0]);
-      }
-      if (tensorRequest.async == true) {
+      if (tensorRequest.async == true && _isolateInterpreter != null) {
         _isolateInterpreter =
             await IsolateInterpreter.create(address: _interpreter.address);
-        await _isolateInterpreter.run(
-            tensorRequest.uint8list!.buffer, outputTensor);
+        await _isolateInterpreter!.run(tensorRequest.data!, outputTensor);
       } else {
-        _interpreter.run(tensorRequest.uint8list!.buffer, outputTensor);
+        _interpreter.run(tensorRequest.data!, outputTensor);
       }
-      // if (tensorRequest.lablesFile != null &&
-      //     await tensorRequest.lablesFile!.exists() &&
-      //     tensorRequest.threshold != null) {
-      //   final List<String> lableList =
-      //       await convertFileToList(lables: tensorRequest.lablesFile!);
-      //   final List<double> outputList = outputTensor[0];
-      //   final Map<String, double> pridict = getPredict(
-      //       lableList: lableList,
-      //       outputList: outputList,
-      //       threshold: tensorRequest.threshold!);
-      //   return TensorFlowResponsModel(predictWithLables: pridict);
-      // } else {
-      //   return TensorFlowResponsModel(predict: outputTensor[0]);
-      // }
-      throw UnimplementedError();
+      if (tensorRequest.lablesFile != null && tensorRequest.threshold != null) {
+        File lebelsFile = File(tensorRequest.lablesFile!);
+        if (await lebelsFile.exists()) {
+          final List<String> lableList =
+              await convertFileToList(lables: lebelsFile);
+          final List<double> outputList = outputTensor[0];
+          final Map<String, double> pridict = getPredict(
+              lableList: lableList,
+              outputList: outputList,
+              threshold: tensorRequest.threshold!);
+          return TensorFlowResponsModel(predictWithLables: pridict);
+        } else {
+          throw Exception('Labels file not exist');
+        }
+      } else {
+        return TensorFlowResponsModel(predict: outputTensor[0]);
+      }
     } catch (e) {
       throw Exception("Model no run successful: $e");
     }
@@ -148,9 +167,11 @@ class TensorFlowLite extends ProviderAiService {
   }
 
   @override
-  Future<void> stopModal() async {
+  Future<void> stopModel() async {
     try {
-      await _isolateInterpreter.close();
+      if (_isolateInterpreter != null) {
+        await _isolateInterpreter!.close();
+      }
       _interpreter.close();
       _inputShapes.clear();
       _inputTypes.clear();
@@ -168,13 +189,6 @@ class TensorFlowLite extends ProviderAiService {
       return false;
     }
     return true;
-  }
-
-  Uint8List normalizudFutureForUint8Lit({required Uint8List uint8List}) {
-    for (int i = 0; i < uint8List.length; i++) {
-      uint8List[i] = (uint8List[i] / 255.0).toInt();
-    }
-    return uint8List;
   }
 
   Future<List<String>> convertFileToList({required File lables}) async {
@@ -214,7 +228,7 @@ class TensorFlowLite extends ProviderAiService {
     return outputShapes.reduce((a, b) => a * b);
   }
 
-  Map<int, List<dynamic>> creatOutputTensors() {
+  Map<int, List<dynamic>> creatOutputTensorsMulty() {
     Map<int, List<dynamic>> outputTensor = {};
     TensorType outputTensorType;
     for (int i = 0; i < _outputTypes.length; i++) {
@@ -228,6 +242,20 @@ class TensorFlowLite extends ProviderAiService {
                 calculateTotalNumbList(outputShapes: _outputShapes[i]), 0)
             .reshape(_outputShapes[i]);
       }
+    }
+    return outputTensor;
+  }
+
+  List<dynamic> creatOutputTensorsSingl() {
+    late List<dynamic> outputTensor;
+    if (_outputTypes.toString().contains("float")) {
+      outputTensor = List.filled(
+              calculateTotalNumbList(outputShapes: _outputShapes[0]), 0.0)
+          .reshape(_outputShapes[0]);
+    } else if (_outputTypes.toString().contains("int")) {
+      outputTensor =
+          List.filled(calculateTotalNumbList(outputShapes: _outputShapes[0]), 0)
+              .reshape(_outputShapes[0]);
     }
     return outputTensor;
   }

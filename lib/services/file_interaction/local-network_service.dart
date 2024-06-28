@@ -12,7 +12,7 @@ class NetworkService {
   factory NetworkService.defaultInstance() {
     return NetworkService(dio: Dio());
   }
-  Future<void> deleteModal({required BaseModel model}) async {
+  Future<void> deleteModel({required BaseModel model}) async {
     final fileOnDevice = File('${model.source}');
     await fileOnDevice.delete();
   }
