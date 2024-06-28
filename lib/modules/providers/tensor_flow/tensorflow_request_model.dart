@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ai_model_land/modules/core/task_request_model.dart';
 
 class TensorFlowRequestModel implements TaskRequestModel {
+  int? adressModel;
+
   bool? async;
 
   @override
@@ -26,11 +27,13 @@ class TensorFlowRequestModel implements TaskRequestModel {
 
   double? threshold;
 
-  @override
-  File? lablesFile;
+  LoadModelWay? loadModelWay;
 
   @override
-  List? lablesList;
+  String? lablesFile;
+
+  @override
+  Object? data;
 
   TensorFlowRequestModel(
       {this.uint16list,
@@ -40,8 +43,17 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.imgHight,
       this.imgWidth,
       this.lablesFile,
-      this.lablesList,
       this.uint8list,
       this.threshold,
-      this.async});
+      this.async,
+      this.data,
+      this.loadModelWay,
+      this.adressModel});
+}
+
+enum LoadModelWay {
+  fromAssets,
+  fromFile,
+  fromAddress,
+  fromBuffer;
 }

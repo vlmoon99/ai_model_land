@@ -7,14 +7,14 @@ import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:flutter/services.dart';
 import 'package:ai_model_land/ai_model_land.dart';
 
-class addModelPage extends StatefulWidget {
-  const addModelPage({Key? key}) : super(key: key);
+class AddModelPage extends StatefulWidget {
+  const AddModelPage({Key? key}) : super(key: key);
 
   @override
-  State<addModelPage> createState() => _addModelPageState();
+  State<AddModelPage> createState() => _AddModelPageState();
 }
 
-class _addModelPageState extends State<addModelPage> {
+class _AddModelPageState extends State<AddModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
   String _platformVersion = 'Unknown';
   final _aiModelLandPlugin = AiModelLand();
@@ -44,13 +44,13 @@ class _addModelPageState extends State<addModelPage> {
     }
   }
 
-  Future<BaseModel> addModel() async {
+  Future<BaseModel> addModel() {
     final model = BaseModel(
         source: sorceController.text,
         nameFile: nameFileController.text,
         format: dropDawnFormat,
         sourceType: dropDawnSourceType);
-    return await _aiModelLand.addModel(baseModel: model);
+    return _aiModelLand.addModel(baseModel: model);
   }
 
   Future<List<BaseModel>> seeLocal() async {
@@ -99,20 +99,26 @@ class _addModelPageState extends State<addModelPage> {
     var repoTest = Scaffold(
       appBar: AppBar(
         title: const Text('Plugin example app'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              },
-              child: Text('Go to home page'),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const HomePage()),
+            //     );
+            //   },
+            //   child: Text('Go to home page'),
+            // ),
             Text('Running on: $_platformVersion\n'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 150.0),
@@ -188,10 +194,14 @@ class _addModelPageState extends State<addModelPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 setState(() {
                   _modelFuture = addModel();
                 });
+                final result = await _modelFuture;
+                if (result != null) {
+                  Navigator.pop(context, true);
+                }
               },
               child: Text('Add Model'),
             ),

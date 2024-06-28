@@ -38,13 +38,14 @@ class AiService {
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
   void checkPlatformGPUAcceleratorPossibilities(String params) {}
 
-  Future<bool> loadModelToProvider({required BaseModel baseModel}) async {
+  Future<bool> loadModelToProvider(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     if (provaiderService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
 
     return await provaiderService[baseModel.format]!
-        .addModalFromFile(baseModel: baseModel);
+        .addModel(request: request, baseModel: baseModel);
   }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
@@ -55,7 +56,7 @@ class AiService {
     if (baseModel.format == null) {
       throw Exception('Incorrect Base Model');
     }
-    await provaiderService[baseModel.format]!.stopModal();
+    await provaiderService[baseModel.format]!.stopModel();
   }
 
   Future<BaseModel> downloadFileToAppDir({required BaseModel baseModel}) async {
@@ -72,7 +73,7 @@ class AiService {
   }
 
   Future<void> deleteModel({required BaseModel baseModel}) async {
-    await networkInteraction.deleteModal(model: baseModel);
+    await networkInteraction.deleteModel(model: baseModel);
   }
 
   bool isModelLoaded({required BaseModel baseModel}) {

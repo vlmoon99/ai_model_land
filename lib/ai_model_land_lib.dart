@@ -54,8 +54,10 @@ class AiModelLandLib {
   }
   // service future
 
-  Future<bool> loadModel({required BaseModel baseModel}) async {
-    return await aiService.loadModelToProvider(baseModel: baseModel);
+  Future<bool> loadModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    return await aiService.loadModelToProvider(
+        request: request, baseModel: baseModel);
   }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
@@ -72,10 +74,13 @@ class AiModelLandLib {
     return aiService.isModelLoaded(baseModel: baseModel);
   }
 
-  Future<void> deleteModel({required BaseModel baseModel}) async {
+  Future<void> deleteModel(
+      {required BaseModel baseModel, required bool fromDevice}) async {
     await coreRepository.delete(
         id: baseModel.id.toString(), sourceType: baseModel.sourceType);
-    await aiService.deleteModel(baseModel: baseModel);
+    if (fromDevice == true) {
+      await aiService.deleteModel(baseModel: baseModel);
+    }
   }
 
   //Repo future

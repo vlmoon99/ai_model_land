@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: const HomePage(),
+        home: HomePage(),
       ),
     );
   }
@@ -52,6 +52,13 @@ class _HomePageState extends State<HomePage> {
         sourceType: ModelSourceType.network);
   }
 
+  void _refreshData() {
+    setState(() {
+      _modelsLocal = seeLocal();
+      _modelsNetwork = seeNetwork();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +79,7 @@ class _HomePageState extends State<HomePage> {
             _modelsLocal == null
                 ? Container()
                 : FutureBuilder<List<BaseModel>>(
+                    key: ValueKey(_modelsLocal),
                     future: _modelsLocal,
                     builder: (BuildContext context,
                         AsyncSnapshot<List<BaseModel>> snapshot) {
@@ -84,14 +92,19 @@ class _HomePageState extends State<HomePage> {
                         return Column(
                           children: snapshot.data!.map((basemodel) {
                             return ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
+                              onPressed: () async {
+                                final isDeleteModel = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         ModelPage(baseModel: basemodel),
                                   ),
                                 );
+                                if (isDeleteModel == true) {
+                                  setState(() {
+                                    _modelsLocal = seeLocal();
+                                  });
+                                }
                               },
                               child: Text(
                                 '${basemodel.nameFile}',
@@ -121,6 +134,7 @@ class _HomePageState extends State<HomePage> {
             _modelsNetwork == null
                 ? Container()
                 : FutureBuilder<List<BaseModel>>(
+                    key: ValueKey(_modelsNetwork),
                     future: _modelsNetwork,
                     builder: (BuildContext context,
                         AsyncSnapshot<List<BaseModel>> snapshot) {
@@ -134,13 +148,18 @@ class _HomePageState extends State<HomePage> {
                           children: snapshot.data!.map((basemodel) {
                             return ElevatedButton(
                               onPressed: () {
-                                Navigator.push(
+                                final isDeleteModel = Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         ModelPage(baseModel: basemodel),
                                   ),
                                 );
+                                if (isDeleteModel == true) {
+                                  setState(() {
+                                    _modelsNetwork = seeNetwork();
+                                  });
+                                }
                               },
                               child: Text(
                                 '${basemodel.nameFile}',
@@ -167,11 +186,14 @@ class _HomePageState extends State<HomePage> {
                   ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final isAddModel = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const addModelPage()),
+                  MaterialPageRoute(builder: (context) => AddModelPage()),
                 );
+                if (isAddModel == true) {
+                  _refreshData();
+                }
               },
               child: Text('Add Model'),
             ),

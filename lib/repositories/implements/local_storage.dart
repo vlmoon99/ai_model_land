@@ -34,7 +34,7 @@ class LocalStorage extends Repository<BaseModel> {
                 as List<dynamic>)
             .map((e) => BaseModel.fromJson(e as Map<String, dynamic>))
             .toList();
-    modals.removeWhere((modal) => modal.id == id);
+    modals.removeWhere((modal) => modal.id.toString() == id);
     await secureStorage.write(
         key: StorageKeys.local, value: jsonEncode(modals));
   }
