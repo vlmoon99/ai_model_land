@@ -51,16 +51,6 @@ class _AddModelPageState extends State<AddModelPage> {
     return _aiModelLand.addModel(baseModel: model);
   }
 
-  Future<bool> deleteAllModelsForTypeLocal() async {
-    return await _aiModelLand.deleteAllModelsForType(
-        sourceType: ModelSourceType.local);
-  }
-
-  Future<bool> deleteAllModelsForTypeNetwork() async {
-    return await _aiModelLand.deleteAllModelsForType(
-        sourceType: ModelSourceType.network);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -70,14 +60,14 @@ class _AddModelPageState extends State<AddModelPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plugin example app'),
+        title: const Text('Add model page'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 150.0),
+              padding: const EdgeInsets.symmetric(horizontal: 50.0),
               child: Column(
                 children: [
                   Text('Sorce Type'),
@@ -179,60 +169,6 @@ class _AddModelPageState extends State<AddModelPage> {
                     },
                   ),
             SizedBox(height: 20),
-            Row(children: [
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isDelete = deleteAllModelsForTypeLocal();
-                  });
-                },
-                child: Text('Delete all Models Local'),
-              ),
-              SizedBox(height: 20),
-              _isDelete == null
-                  ? Container()
-                  : FutureBuilder<bool>(
-                      future: _isDelete,
-                      builder:
-                          (BuildContext context, AsyncSnapshot<bool> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model delete: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isDeleteNetwork = deleteAllModelsForTypeNetwork();
-                  });
-                },
-                child: Text('Delete all Models Network'),
-              ),
-              SizedBox(height: 20),
-              _isDeleteNetwork == null
-                  ? Container()
-                  : FutureBuilder<bool>(
-                      future: _isDeleteNetwork,
-                      builder:
-                          (BuildContext context, AsyncSnapshot<bool> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model delete: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-            ]),
           ],
         ),
       ),

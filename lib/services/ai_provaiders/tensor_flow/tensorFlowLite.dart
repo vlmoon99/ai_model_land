@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';
@@ -34,7 +35,7 @@ class TensorFlowLite extends ProviderAiService {
             {
               final file = File(baseModel.source);
               if (await file.exists()) {
-                _interpreter = Interpreter.fromFile(file);
+                _interpreter = await Interpreter.fromFile(file);
                 getInformationModel();
                 print('interpreter by file was create successful');
                 return true;
@@ -51,7 +52,7 @@ class TensorFlowLite extends ProviderAiService {
           case LoadModelWay.fromBuffer:
             {
               if (request.uint8list != null) {
-                _interpreter = Interpreter.fromBuffer(request.uint8list!);
+                _interpreter = await Interpreter.fromBuffer(request.uint8list!);
                 print('interpreter by asset was create successful');
                 return true;
               } else {
@@ -146,11 +147,11 @@ class TensorFlowLite extends ProviderAiService {
   Future<TensorFlowResponsModel> singlInputinteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
     final List<dynamic> outputTensor = creatOutputTensorsSingl();
+    final _isolateInterpreter =
+        await IsolateInterpreter.create(address: _interpreter.address);
 
     if (tensorRequest.async == true) {
-      _isolateInterpreter =
-          await IsolateInterpreter.create(address: _interpreter.address);
-      await _isolateInterpreter!.run(tensorRequest.data!, outputTensor);
+      await _isolateInterpreter.run(tensorRequest.data!, outputTensor);
     } else {
       _interpreter.run(tensorRequest.data!, outputTensor);
     }
@@ -194,6 +195,7 @@ class TensorFlowLite extends ProviderAiService {
     if (tensorRequest.async == true) {
       _isolateInterpreter =
           await IsolateInterpreter.create(address: _interpreter.address);
+
       await _isolateInterpreter!
           .runForMultipleInputs(tensorRequest.dataMulti!, outputTensors);
     } else {

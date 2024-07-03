@@ -54,18 +54,21 @@ class _ModelPageState extends State<ModelPage> {
   }
 
   Future<void> runModel(
-      {required BaseModel baseModel, required Object inputObject}) async {
+      {required BaseModel baseModel,
+      required Object inputObject,
+      required bool async}) async {
     late TensorFlowResponsModel output;
     if (lables != null) {
       output = await _aiModelLand.runTaskOnTheModel(
           request: TensorFlowRequestModel(
               data: inputObject,
+              async: async,
               lablesFile: lables,
               threshold: double.tryParse(thresholdController.text)),
           baseModel: baseModel) as TensorFlowResponsModel;
     } else {
       output = await _aiModelLand.runTaskOnTheModel(
-          request: TensorFlowRequestModel(data: inputObject),
+          request: TensorFlowRequestModel(data: inputObject, async: async),
           baseModel: baseModel) as TensorFlowResponsModel;
     }
 
@@ -138,6 +141,40 @@ class _ModelPageState extends State<ModelPage> {
       await deleteMoodel(baseModel: widget.baseModel, fromDevice: true);
     } else {
       await deleteMoodel(baseModel: widget.baseModel, fromDevice: false);
+    }
+  }
+
+  Future<void> _showRunModelDialog(BuildContext context) async {
+    final bool? async = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm run model'),
+          content: const Text('Do you want to run this model in async way?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (async != null && inputObject != null) {
+      await runModel(
+          baseModel: widget.baseModel,
+          inputObject: inputObject!,
+          async: async!);
+      ;
     }
   }
 
@@ -242,24 +279,40 @@ class _ModelPageState extends State<ModelPage> {
             SizedBox(
               height: 10,
             ),
-            ElevatedButton(
-              onPressed: pickFileIMG,
-              child: Text('Variably: Pick File (IMG)'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: pickFileIMG,
+                  child: Text('Variably: Pick File (IMG)'),
+                ),
+                SizedBox(width: 10),
+                imgByteList.length == 0
+                    ? Text("IMG not add")
+                    : Text('IMG was add'),
+              ],
             ),
-            imgByteList.length == 0 ? Text("IMG not add") : Text('IMG was add'),
             SizedBox(
               height: 10,
             ),
-            ElevatedButton(
-              onPressed: () {
-                pickLables();
-                setState(() {
-                  isNeedThreshold = true;
-                });
-              },
-              child: Text('Variably: Pick File (Lables)'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    pickLables();
+                    setState(() {
+                      isNeedThreshold = true;
+                    });
+                  },
+                  child: Text('Variably: Pick File (Lables)'),
+                ),
+                SizedBox(width: 10),
+                lables == null
+                    ? Text("Lables not add")
+                    : Text('Lables was add'),
+              ],
             ),
-            lables == null ? Text("Lables not add") : Text('Lables was add'),
             isNeedThreshold == null || isNeedThreshold == false
                 ? Container()
                 : Container(
@@ -277,7 +330,7 @@ class _ModelPageState extends State<ModelPage> {
                 padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.blue,
+                    color: Color.fromARGB(255, 3, 69, 248),
                     width: 2.0,
                   ),
                   borderRadius: BorderRadius.circular(12.0),
@@ -303,11 +356,8 @@ class _ModelPageState extends State<ModelPage> {
                 )),
             SizedBox(height: 9),
             ElevatedButton(
-              onPressed: () {
-                if (inputObject != null) {
-                  runModel(
-                      baseModel: widget.baseModel, inputObject: inputObject!);
-                }
+              onPressed: () async {
+                await _showRunModelDialog(context);
                 resetAllInputs();
               },
               child: Text('Run model'),
