@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:ai_model_land/modules/core/task_response_model.dart';
+import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:ai_model_land_example/main.dart';
+import 'package:ai_model_land_example/preprocesingClass.dart';
 import 'package:image/image.dart' as img;
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
@@ -20,12 +23,18 @@ class ModelPage extends StatefulWidget {
 
 class _ModelPageState extends State<ModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
+  final Preprocesingclass preprocesingclass = Preprocesingclass();
+
   Uint8List imgByteList = Uint8List(0);
 
+  List<dynamic>? outputPredict;
+  Object? inputObject;
   String? lables;
+  bool? isDictionaryTextAdd;
+  bool? isNeedThreshold;
 
-  // late bool isModelLoaded;
-
+  final textController = TextEditingController();
+  var thresholdController = TextEditingController();
   Future<bool>? isAdd;
 
   Future<bool> loadModel({required BaseModel baseModel}) async {
@@ -34,45 +43,35 @@ class _ModelPageState extends State<ModelPage> {
         baseModel: baseModel);
   }
 
-  // bool isModelLoadedF({required BaseModel baseModel}) {
-  //   return _aiModelLand.isModelLoaded(baseModel: baseModel);
-  // }
-
-  Future<void> deleteMoodel({required BaseModel baseModel}) async {
-    await _aiModelLand.deleteModel(baseModel: baseModel, fromDevice: false);
+  Future<void> deleteMoodel(
+      {required BaseModel baseModel, required bool fromDevice}) async {
+    await _aiModelLand.deleteModel(
+        baseModel: baseModel, fromDevice: fromDevice);
   }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
     await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
-  Future<void> runModel({required BaseModel baseModel}) async {
-    if (imgByteList.isEmpty) {
-      throw Exception('Img not add');
+  Future<void> runModel(
+      {required BaseModel baseModel, required Object inputObject}) async {
+    late TensorFlowResponsModel output;
+    if (lables != null) {
+      output = await _aiModelLand.runTaskOnTheModel(
+          request: TensorFlowRequestModel(
+              data: inputObject,
+              lablesFile: lables,
+              threshold: double.tryParse(thresholdController.text)),
+          baseModel: baseModel) as TensorFlowResponsModel;
+    } else {
+      output = await _aiModelLand.runTaskOnTheModel(
+          request: TensorFlowRequestModel(data: inputObject),
+          baseModel: baseModel) as TensorFlowResponsModel;
     }
-    if (lables == null) {
-      print('Lables not add');
-    }
-    await _aiModelLand.runTaskOnTheModel(
-        request: TensorFlowRequestModel(
-            data: imgByteList, lablesFile: lables, threshold: 0.01),
-        baseModel: baseModel);
-  }
 
-  Uint8List imageToByteListFloat32(
-      img.Image image, int inputSize, double mean, double std) {
-    var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
-    var buffer = Float32List.view(convertedBytes.buffer);
-    int pixelIndex = 0;
-    for (var i = 0; i < inputSize; i++) {
-      for (var j = 0; j < inputSize; j++) {
-        var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (pixel.r - mean) / std;
-        buffer[pixelIndex++] = (pixel.g - mean) / std;
-        buffer[pixelIndex++] = (pixel.b - mean) / std;
-      }
-    }
-    return convertedBytes.buffer.asUint8List();
+    setState(() {
+      outputPredict = output.predictForSingle;
+    });
   }
 
   Future<String?> pickLables() async {
@@ -87,26 +86,93 @@ class _ModelPageState extends State<ModelPage> {
     }
   }
 
-  Future<String?> pickFile() async {
+  Future<String?> pickdictionary() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
-
     if (result != null) {
-      final listBity = await File(result.files.single.path!).readAsBytes();
-      img.Image image = img.decodeImage(listBity)!;
-      img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
-      final Uint8List last =
-          imageToByteListFloat32(resizedImage, 224, 127.5, 127.5);
+      final List<List<double>> byteList =
+          await preprocesingclass.tokenizeInputText(
+              text: textController.text, vocabPath: result.files.single.path!);
+
       setState(() {
-        imgByteList = last;
+        inputObject = byteList;
+        isDictionaryTextAdd = true;
       });
     } else {
       return null;
     }
   }
 
+  Future<void> restartModel({required BaseModel baseModel}) async {
+    await _aiModelLand.restartModel(
+        baseModel: baseModel,
+        request: TensorFlowRequestModel(loadModelWay: LoadModelWay.fromFile));
+  }
+
+  Future<void> _showDeleteConfirmationDialog(BuildContext context) async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content:
+              const Text('Do you want to delete this model from the device?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      await deleteMoodel(baseModel: widget.baseModel, fromDevice: true);
+    } else {
+      await deleteMoodel(baseModel: widget.baseModel, fromDevice: false);
+    }
+  }
+
+  Future<String?> pickFileIMG() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      final listBity = await File(result.files.single.path!).readAsBytes();
+      img.Image image = img.decodeImage(listBity)!;
+      img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
+      final Uint8List last = preprocesingclass.imageToByteListFloat32(
+          resizedImage, 224, 127.5, 127.5);
+      setState(() {
+        imgByteList = last;
+        inputObject = last;
+      });
+    } else {
+      return null;
+    }
+  }
+
+  void resetAllInputs() {
+    setState(() {
+      inputObject = null;
+      lables = null;
+      textController.text = '';
+      isDictionaryTextAdd = false;
+      isNeedThreshold = false;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    thresholdController.text = '0.01';
   }
 
   @override
@@ -153,54 +219,126 @@ class _ModelPageState extends State<ModelPage> {
               ),
             ),
             SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    stopModel(baseModel: widget.baseModel);
+                    setState(() {
+                      isAdd = Future.value(false);
+                    });
+                  },
+                  child: Text('Stop model'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    stopModel(baseModel: widget.baseModel);
+                  },
+                  child: Text('Restart model '),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            ElevatedButton(
+              onPressed: pickFileIMG,
+              child: Text('Variably: Pick File (IMG)'),
+            ),
+            imgByteList.length == 0 ? Text("IMG not add") : Text('IMG was add'),
+            SizedBox(
+              height: 10,
+            ),
             ElevatedButton(
               onPressed: () {
-                stopModel(baseModel: widget.baseModel);
+                pickLables();
                 setState(() {
-                  isAdd = Future.value(false);
+                  isNeedThreshold = true;
                 });
-                // setState(() {
-                //   isModelLoaded = false;
-                // });
               },
-              child: Text('Stop model'),
+              child: Text('Variably: Pick File (Lables)'),
             ),
-            SizedBox(
-              height: 10,
-            ),
-            ElevatedButton(
-              onPressed: pickFile,
-              child: Text('Pick model File (IMG)'),
-            ),
-            imgByteList.length == 0 ? Text("img not add") : Text('img was add'),
-            SizedBox(
-              height: 10,
-            ),
-            ElevatedButton(
-              onPressed: pickLables,
-              child: Text('Pick model File (Lables)'),
-            ),
-            lables == null ? Text("img not add") : Text('img was add'),
-            SizedBox(
-              height: 10,
-            ),
+            lables == null ? Text("Lables not add") : Text('Lables was add'),
+            isNeedThreshold == null || isNeedThreshold == false
+                ? Container()
+                : Container(
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 50),
+                    child: Center(
+                      child: TextField(
+                        controller: thresholdController,
+                        decoration:
+                            InputDecoration(labelText: 'Input for threshold'),
+                      ),
+                    ),
+                  ),
+            SizedBox(height: 9),
+            Container(
+                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.blue,
+                    width: 2.0,
+                  ),
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Container(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: textController,
+                        decoration: InputDecoration(
+                            labelText: 'Input for classifier text'),
+                      ),
+                      SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: pickdictionary,
+                        child: Text('Pick dictionary and save text'),
+                      ),
+                      isDictionaryTextAdd == true
+                          ? Text('Dictionary and text save')
+                          : Text('Dictionary and text not save'),
+                    ],
+                  ),
+                )),
+            SizedBox(height: 9),
             ElevatedButton(
               onPressed: () {
-                runModel(baseModel: widget.baseModel);
+                if (inputObject != null) {
+                  runModel(
+                      baseModel: widget.baseModel, inputObject: inputObject!);
+                }
+                resetAllInputs();
               },
               child: Text('Run model'),
             ),
+            inputObject == null
+                ? Text("Object for add is empty")
+                : Text('Object for add is not empty'),
             SizedBox(
               height: 10,
             ),
             ElevatedButton(
-              onPressed: () {
-                deleteMoodel(baseModel: widget.baseModel);
+              onPressed: () async {
+                await _showDeleteConfirmationDialog(context);
                 Navigator.pop(context, true);
               },
               child: Text('Delete model'),
             ),
-            // Text('${img.last}'),
+            SizedBox(height: 8),
+            Text('Predict:'),
+            outputPredict == null
+                ? Container()
+                : Flexible(
+                    child: ListView.builder(
+                      itemCount: outputPredict!.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text('${outputPredict![index]}!'),
+                        );
+                      },
+                    ),
+                  ),
           ],
         ),
       ),

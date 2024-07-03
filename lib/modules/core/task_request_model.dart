@@ -7,4 +7,5 @@ abstract class TaskRequestModel {
   Uint64List? uint64list;
   Object? data;
   String? lablesFile;
+  List<Object>? dataMulti;
 }

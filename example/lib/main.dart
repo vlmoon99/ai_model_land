@@ -1,8 +1,12 @@
+import 'dart:io';
+
+import 'package:ai_model_land/ai_model_land.dart';
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
 import 'package:ai_model_land_example/modalPage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'addModelPage.dart';
 import 'package:provider/provider.dart';
 
@@ -41,8 +45,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
+  final _aiModelLandPlugin = AiModelLand();
+  String _platformVersion = 'Unknown';
   Future<List<BaseModel>>? _modelsLocal;
   Future<List<BaseModel>>? _modelsNetwork;
+  Future<Map<String, dynamic>>? posibilitis;
   Future<List<BaseModel>> seeLocal() async {
     return await _aiModelLand.readAllForType(sourceType: ModelSourceType.local);
   }
@@ -59,11 +66,34 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> initPlatformState() async {
+    String platformVersion;
+    try {
+      platformVersion = await _aiModelLandPlugin.getPlatformVersion() ??
+          'Unknown platform version';
+    } on PlatformException {
+      platformVersion = 'Failed to get platform version.';
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _platformVersion = platformVersion;
+    });
+  }
+
+  Future<Map<String, dynamic>>
+      checkPlatformGPUAcceleratorPossibilities() async {
+    return await _aiModelLand.checkPlatformGPUAcceleratorPossibilities();
+  }
+
   @override
   void initState() {
     super.initState();
     _modelsLocal = seeLocal();
     _modelsNetwork = seeNetwork();
+    initPlatformState();
+    posibilitis = checkPlatformGPUAcceleratorPossibilities();
   }
 
   @override
@@ -107,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                                 }
                               },
                               child: Text(
-                                '${basemodel.nameFile}',
+                                '${basemodel.nameFile}.${basemodel.format.name}',
                                 style: const TextStyle(
                                     color: const Color.fromARGB(255, 0, 0, 0)),
                               ),
@@ -147,8 +177,8 @@ class _HomePageState extends State<HomePage> {
                         return Column(
                           children: snapshot.data!.map((basemodel) {
                             return ElevatedButton(
-                              onPressed: () {
-                                final isDeleteModel = Navigator.push(
+                              onPressed: () async {
+                                final isDeleteModel = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
@@ -162,7 +192,7 @@ class _HomePageState extends State<HomePage> {
                                 }
                               },
                               child: Text(
-                                '${basemodel.nameFile}',
+                                '${basemodel.nameFile}.${basemodel.format.name}',
                                 style: const TextStyle(
                                     color: const Color.fromARGB(255, 0, 0, 0)),
                               ),
@@ -197,6 +227,41 @@ class _HomePageState extends State<HomePage> {
               },
               child: Text('Add Model'),
             ),
+            SizedBox(height: 5),
+            Text('Device characteristic:'),
+            SizedBox(height: 5),
+            Text('$_platformVersion'),
+            posibilitis == null
+                ? Container()
+                : Flexible(
+                    child: FutureBuilder<Map<String, dynamic>>(
+                      future: posibilitis,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<Map<String, dynamic>> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return SelectableText('Error: ${snapshot.error}');
+                        } else if (snapshot.hasData) {
+                          final data = snapshot.data!;
+                          return ListView(
+                            children: data.entries.map((entry) {
+                              String key = entry.key;
+                              dynamic value = entry.value;
+                              return ListTile(
+                                title: SelectableText('$key: $value'),
+                              );
+                            }).toList(),
+                          );
+                        } else {
+                          return Center(child: Text('No data available'));
+                        }
+                      },
+                    ),
+                  ),
+            SizedBox(height: 6),
           ],
         ),
       ),

@@ -35,6 +35,9 @@ class TensorFlowRequestModel implements TaskRequestModel {
   @override
   Object? data;
 
+  @override
+  List<Object>? dataMulti;
+
   TensorFlowRequestModel(
       {this.uint16list,
       this.float32list,
@@ -48,7 +51,8 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.async,
       this.data,
       this.loadModelWay,
-      this.adressModel});
+      this.adressModel,
+      this.dataMulti});
 }
 
 enum LoadModelWay {

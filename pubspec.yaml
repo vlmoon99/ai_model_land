@@ -23,6 +23,7 @@ dependencies:
   onnxruntime: ^1.4.1
   path_provider: ^2.0.0
   rxdart: ^0.27.7
+  device_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:

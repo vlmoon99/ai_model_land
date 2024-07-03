@@ -1,24 +1,31 @@
+import 'dart:async';
+
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/core/task_request_model.dart';
 import 'package:ai_model_land/modules/core/task_response_model.dart';
 import 'package:ai_model_land/services/ai_provaiders/tensor_flow/tensorFlowLite.dart';
 import 'package:ai_model_land/services/file_interaction/local-network_service.dart';
+import 'package:ai_model_land/services/platform_info.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
 
 class AiService {
   final NetworkService networkInteraction;
 
+  final PlatformInfo platformInfo;
+
   final Map<ModelFormat, ProviderAiService> provaiderService = {};
 
   AiService(
       {required this.networkInteraction,
-      required final TensorFlowLite tensorFlowProviderService}) {
+      required final TensorFlowLite tensorFlowProviderService,
+      required this.platformInfo}) {
     provaiderService.putIfAbsent(
         ModelFormat.tflite, () => tensorFlowProviderService);
   }
 
   factory AiService.defaultInstance() {
     return AiService(
+      platformInfo: PlatformInfo.defaultInstance(),
       networkInteraction: NetworkService.defaultInstance(),
       tensorFlowProviderService: TensorFlowLite.defaultInstance(),
     );
@@ -36,7 +43,10 @@ class AiService {
   }
 
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
-  void checkPlatformGPUAcceleratorPossibilities(String params) {}
+  Future<Map<String, dynamic>>
+      checkPlatformGPUAcceleratorPossibilities() async {
+    return await platformInfo.checkPlatformGPUAcceleratorPossibilities();
+  }
 
   Future<bool> loadModelToProvider(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
@@ -74,6 +84,15 @@ class AiService {
 
   Future<void> deleteModel({required BaseModel baseModel}) async {
     await networkInteraction.deleteModel(model: baseModel);
+  }
+
+  Future<void> restartModel(
+      {required BaseModel baseModel, required TaskRequestModel request}) async {
+    if (provaiderService[baseModel.format] == null) {
+      throw Exception('Incorrect Provider');
+    }
+    await provaiderService[baseModel.format]!
+        .restartModel(request: request, baseModel: baseModel);
   }
 
   bool isModelLoaded({required BaseModel baseModel}) {
