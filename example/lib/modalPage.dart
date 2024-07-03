@@ -25,7 +25,7 @@ class _ModelPageState extends State<ModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
   final Preprocesingclass preprocesingclass = Preprocesingclass();
 
-  Uint8List imgByteList = Uint8List(0);
+  Uint8List? imgByteList;
 
   List<dynamic>? outputPredict;
   Object? inputObject;
@@ -198,6 +198,7 @@ class _ModelPageState extends State<ModelPage> {
 
   void resetAllInputs() {
     setState(() {
+      imgByteList = null;
       inputObject = null;
       lables = null;
       textController.text = '';
@@ -287,9 +288,7 @@ class _ModelPageState extends State<ModelPage> {
                   child: Text('Variably: Pick File (IMG)'),
                 ),
                 SizedBox(width: 10),
-                imgByteList.length == 0
-                    ? Text("IMG not add")
-                    : Text('IMG was add'),
+                imgByteList == null ? Text("IMG not add") : Text('IMG was add'),
               ],
             ),
             SizedBox(

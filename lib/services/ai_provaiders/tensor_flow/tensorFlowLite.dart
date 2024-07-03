@@ -36,16 +36,18 @@ class TensorFlowLite extends ProviderAiService {
               final file = File(baseModel.source);
               if (await file.exists()) {
                 _interpreter = await Interpreter.fromFile(file);
-                getInformationModel();
+                getInformationAndIsolate();
                 print('interpreter by file was create successful');
                 return true;
               } else {
                 print('File not exist');
+                return false;
               }
             }
           case LoadModelWay.fromAssets:
             {
               _interpreter = await Interpreter.fromAsset(baseModel.source);
+              getInformationAndIsolate();
               print('interpreter by asset was create successful');
               return true;
             }
@@ -53,7 +55,7 @@ class TensorFlowLite extends ProviderAiService {
             {
               if (request.uint8list != null) {
                 _interpreter = await Interpreter.fromBuffer(request.uint8list!);
-                print('interpreter by asset was create successful');
+                getInformationAndIsolate();
                 return true;
               } else {
                 print('Not add uint8list for buffer');
@@ -63,8 +65,7 @@ class TensorFlowLite extends ProviderAiService {
           case LoadModelWay.fromAddress:
             {
               if (request.adressModel != null) {
-                _interpreter =
-                    await Interpreter.fromAddress(request.adressModel!);
+                getInformationAndIsolate();
                 print('interpreter by asset was create successful');
                 return true;
               } else {
@@ -79,6 +80,12 @@ class TensorFlowLite extends ProviderAiService {
       print("Error while creating interpreter: $e");
     }
     return false;
+  }
+
+  Future<void> getInformationAndIsolate() async {
+    getInformationModel();
+    _isolateInterpreter =
+        await IsolateInterpreter.create(address: _interpreter.address);
   }
 
   void getInformationModel() {
@@ -147,11 +154,9 @@ class TensorFlowLite extends ProviderAiService {
   Future<TensorFlowResponsModel> singlInputinteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
     final List<dynamic> outputTensor = creatOutputTensorsSingl();
-    final _isolateInterpreter =
-        await IsolateInterpreter.create(address: _interpreter.address);
 
-    if (tensorRequest.async == true) {
-      await _isolateInterpreter.run(tensorRequest.data!, outputTensor);
+    if (tensorRequest.async == true && !_interpreter.isDeleted) {
+      await _isolateInterpreter!.run(tensorRequest.data!, outputTensor);
     } else {
       _interpreter.run(tensorRequest.data!, outputTensor);
     }
