@@ -1,6 +1,6 @@
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
-import 'package:ai_model_land_example/main.dart';
+
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:ai_model_land/ai_model_land_lib.dart';
@@ -16,8 +16,6 @@ class AddModelPage extends StatefulWidget {
 
 class _AddModelPageState extends State<AddModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
-  String _platformVersion = 'Unknown';
-  final _aiModelLandPlugin = AiModelLand();
 
   final sorceController = TextEditingController();
   final nameFileController = TextEditingController();
@@ -53,15 +51,6 @@ class _AddModelPageState extends State<AddModelPage> {
     return _aiModelLand.addModel(baseModel: model);
   }
 
-  Future<List<BaseModel>> seeLocal() async {
-    return await _aiModelLand.readAllForType(sourceType: ModelSourceType.local);
-  }
-
-  Future<List<BaseModel>> seeNetwork() async {
-    return await _aiModelLand.readAllForType(
-        sourceType: ModelSourceType.network);
-  }
-
   Future<bool> deleteAllModelsForTypeLocal() async {
     return await _aiModelLand.deleteAllModelsForType(
         sourceType: ModelSourceType.local);
@@ -75,51 +64,18 @@ class _AddModelPageState extends State<AddModelPage> {
   @override
   void initState() {
     super.initState();
-    initPlatformState();
-  }
-
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    try {
-      platformVersion = await _aiModelLandPlugin.getPlatformVersion() ??
-          'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    var repoTest = Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Plugin example app'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(builder: (context) => const HomePage()),
-            //     );
-            //   },
-            //   child: Text('Go to home page'),
-            // ),
-            Text('Running on: $_platformVersion\n'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 150.0),
               child: Column(
@@ -227,59 +183,6 @@ class _AddModelPageState extends State<AddModelPage> {
               ElevatedButton(
                 onPressed: () {
                   setState(() {
-                    _modelsLocal = seeLocal();
-                  });
-                },
-                child: Text('See local repo'),
-              ),
-              SizedBox(height: 20),
-              _modelsLocal == null
-                  ? Container()
-                  : FutureBuilder<List<BaseModel>>(
-                      future: _modelsLocal,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<List<BaseModel>> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model added: ${snapshot.toString() ?? ''}');
-                        }
-                      },
-                    ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _modelsNetwork = seeNetwork();
-                  });
-                },
-                child: Text('See network repo'),
-              ),
-              SizedBox(height: 20),
-              _modelsNetwork == null
-                  ? Container()
-                  : FutureBuilder<List<BaseModel>>(
-                      future: _modelsNetwork,
-                      builder: (BuildContext context,
-                          AsyncSnapshot<List<BaseModel>> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return SelectableText('Error: ${snapshot.error}');
-                        } else {
-                          return SelectableText(
-                              'Model added: ${snapshot.data ?? ''}');
-                        }
-                      },
-                    ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
                     _isDelete = deleteAllModelsForTypeLocal();
                   });
                 },
@@ -333,10 +236,6 @@ class _AddModelPageState extends State<AddModelPage> {
           ],
         ),
       ),
-    );
-
-    return MaterialApp(
-      home: repoTest,
     );
   }
 }

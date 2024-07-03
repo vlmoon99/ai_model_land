@@ -49,7 +49,7 @@ class AiModelLandLib {
     final finalModelForAdd =
         await aiService.fileInteraction(baseModel: processedBaseModeld);
 
-    coreRepository.save(item: finalModelForAdd);
+    await coreRepository.save(item: finalModelForAdd);
     return finalModelForAdd;
   }
   // service future
@@ -81,6 +81,16 @@ class AiModelLandLib {
     if (fromDevice == true) {
       await aiService.deleteModel(baseModel: baseModel);
     }
+  }
+
+  Future<Map<String, dynamic>>
+      checkPlatformGPUAcceleratorPossibilities() async {
+    return await aiService.checkPlatformGPUAcceleratorPossibilities();
+  }
+
+  Future<void> restartModel(
+      {required BaseModel baseModel, required TaskRequestModel request}) async {
+    await aiService.restartModel(baseModel: baseModel, request: request);
   }
 
   //Repo future
