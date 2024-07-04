@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ai_model_land/modules/core/task_response_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:ai_model_land_example/main.dart';
+import 'package:ai_model_land_example/objectDetectionPage/objectDetectionPage.dart';
 import 'package:ai_model_land_example/preprocesingClass.dart';
 import 'package:image/image.dart' as img;
 import 'package:ai_model_land/ai_model_land_lib.dart';
@@ -353,6 +354,20 @@ class _ModelPageState extends State<ModelPage> {
                     ],
                   ),
                 )),
+            SizedBox(height: 9),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => (ObjectDetection(
+                      baseModel: widget.baseModel,
+                    )),
+                  ),
+                );
+              },
+              child: Text('Run model object detection'),
+            ),
             SizedBox(height: 9),
             ElevatedButton(
               onPressed: () async {
