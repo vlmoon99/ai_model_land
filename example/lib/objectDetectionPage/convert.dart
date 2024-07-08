@@ -1,181 +1,115 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:camera/camera.dart';
-import 'package:exif/exif.dart';
-import 'package:image/image.dart' as image_lib;
 
-Future<image_lib.Image?> convertCameraImageToImage(
-    CameraImage cameraImage) async {
-  image_lib.Image image;
+import 'package:image/image.dart';
 
-  if (cameraImage.format.group == ImageFormatGroup.yuv420) {
-    image = convertYUV420ToImage(cameraImage);
-  } else if (cameraImage.format.group == ImageFormatGroup.bgra8888) {
-    image = convertBGRA8888ToImage(cameraImage);
-  } else if (cameraImage.format.group == ImageFormatGroup.jpeg) {
-    image = convertJPEGToImage(cameraImage);
-  } else if (cameraImage.format.group == ImageFormatGroup.nv21) {
-    image = convertNV21ToImage(cameraImage);
-  } else {
-    return null;
-  }
+class ImageUtils {
+  static Float64List imageToFloatBuffer(
+      Image image, List<double> mean, List<double> std,
+      {bool contiguous = true}) {
+    var bytes = Float64List(1 * image.height * image.width * 3);
+    var buffer = Float64List.view(bytes.buffer);
 
-  return image;
-}
-
-image_lib.Image convertYUV420ToImage(CameraImage cameraImage) {
-  final width = cameraImage.width;
-  final height = cameraImage.height;
-
-  final uvRowStride = cameraImage.planes[1].bytesPerRow;
-  final uvPixelStride = cameraImage.planes[1].bytesPerPixel!;
-
-  final yPlane = cameraImage.planes[0].bytes;
-  final uPlane = cameraImage.planes[1].bytes;
-  final vPlane = cameraImage.planes[2].bytes;
-
-  final image = image_lib.Image(width: width, height: height);
-
-  var uvIndex = 0;
-
-  for (var y = 0; y < height; y++) {
-    var pY = y * width;
-    var pUV = uvIndex;
-
-    for (var x = 0; x < width; x++) {
-      final yValue = yPlane[pY];
-      final uValue = uPlane[pUV];
-      final vValue = vPlane[pUV];
-
-      final r = yValue + 1.402 * (vValue - 128);
-      final g = yValue - 0.344136 * (uValue - 128) - 0.714136 * (vValue - 128);
-      final b = yValue + 1.772 * (uValue - 128);
-
-      image.setPixelRgba(x, y, r.toInt(), g.toInt(), b.toInt(), 255);
-
-      pY++;
-      if (x % 2 == 1 && uvPixelStride == 2) {
-        pUV += uvPixelStride;
-      } else if (x % 2 == 1 && uvPixelStride == 1) {
-        pUV++;
+    if (contiguous) {
+      int offsetG = image.height * image.width;
+      int offsetB = 2 * image.height * image.width;
+      int i = 0;
+      for (var y = 0; y < image.height; y++) {
+        for (var x = 0; x < image.width; x++) {
+          Pixel pixel = image.getPixel(x, y);
+          buffer[i] = ((pixel.r / 255) - mean[0]) / std[0];
+          buffer[offsetG + i] = ((pixel.g / 255) - mean[1]) / std[1];
+          buffer[offsetB + i] = ((pixel.b / 255) - mean[2]) / std[2];
+          i++;
+        }
+      }
+    } else {
+      int i = 0;
+      for (var y = 0; y < image.height; y++) {
+        for (var x = 0; x < image.width; x++) {
+          Pixel pixel = image.getPixel(x, y);
+          buffer[i++] = ((pixel.r / 255) - mean[0]) / std[0];
+          buffer[i++] = ((pixel.g / 255) - mean[1]) / std[1];
+          buffer[i++] = ((pixel.b / 255) - mean[2]) / std[2];
+        }
       }
     }
 
-    if (y % 2 == 1) {
-      uvIndex += uvRowStride;
+    return bytes;
+  }
+
+  /// Converts a [CameraImage] in YUV420 format to [Image] in RGB format
+  static Image? convertCameraImage(CameraImage cameraImage) {
+    if (cameraImage.format.group == ImageFormatGroup.yuv420) {
+      return convertYUV420ToImage(cameraImage);
+    } else if (cameraImage.format.group == ImageFormatGroup.bgra8888) {
+      return convertBGRA8888ToImage(cameraImage);
+    } else {
+      return null;
     }
   }
-  return image;
-}
 
-image_lib.Image convertBGRA8888ToImage(CameraImage cameraImage) {
-  // Extract the bytes from the CameraImage
-  final bytes = cameraImage.planes[0].bytes;
+  static Image convertBGRA8888ToImage(CameraImage image) {
+    return Image.fromBytes(
+      width: image.width,
+      height: image.height,
+      bytes: image.planes[0].bytes.buffer,
+      order: ChannelOrder.bgra,
+    );
+  }
 
-  // Create a new Image instance
-  final image = image_lib.Image.fromBytes(
-    width: cameraImage.width,
-    height: cameraImage.height,
-    bytes: bytes.buffer,
-    order: image_lib.ChannelOrder.rgba,
-  );
+  static Image convertNV21ToImage(CameraImage image) {
+    return Image.fromBytes(
+      width: image.width,
+      height: image.height,
+      bytes: image.planes.first.bytes.buffer,
+      order: ChannelOrder.bgra,
+    );
+  }
 
-  return image;
-}
-
-image_lib.Image convertJPEGToImage(CameraImage cameraImage) {
-  // Extract the bytes from the CameraImage
-  final bytes = cameraImage.planes[0].bytes;
-
-  // Create a new Image instance from the JPEG bytes
-  final image = image_lib.decodeImage(bytes);
-
-  return image!;
-}
-
-image_lib.Image convertNV21ToImage(CameraImage cameraImage) {
-  // Extract the bytes from the CameraImage
-  final yuvBytes = cameraImage.planes[0].bytes;
-  final vuBytes = cameraImage.planes[1].bytes;
-
-  // Create a new Image instance
-  final image = image_lib.Image(
-    width: cameraImage.width,
-    height: cameraImage.height,
-  );
-
-  // Convert NV21 to RGB
-  convertNV21ToRGB(
-    yuvBytes,
-    vuBytes,
-    cameraImage.width,
-    cameraImage.height,
-    image,
-  );
-
-  return image;
-}
-
-void convertNV21ToRGB(Uint8List yuvBytes, Uint8List vuBytes, int width,
-    int height, image_lib.Image image) {
-  // Conversion logic from NV21 to RGB
-  // ...
-
-  // Example conversion logic using the `imageLib` package
-  // This is just a placeholder and may not be the most efficient method
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      final yIndex = y * width + x;
-      final uvIndex = (y ~/ 2) * (width ~/ 2) + (x ~/ 2);
-
-      final yValue = yuvBytes[yIndex];
-      final uValue = vuBytes[uvIndex * 2];
-      final vValue = vuBytes[uvIndex * 2 + 1];
-
-      // Convert YUV to RGB
-      final r = yValue + 1.402 * (vValue - 128);
-      final g = yValue - 0.344136 * (uValue - 128) - 0.714136 * (vValue - 128);
-      final b = yValue + 1.772 * (uValue - 128);
-
-      // Set the RGB pixel values in the Image instance
-      image.setPixelRgba(x, y, r.toInt(), g.toInt(), b.toInt(), 255);
+  static Image convertYUV420ToImage(CameraImage image) {
+    final uvRowStride = image.planes[1].bytesPerRow;
+    final uvPixelStride = image.planes[1].bytesPerPixel ?? 0;
+    final img = Image(width: image.width, height: image.height);
+    for (final p in img) {
+      final x = p.x;
+      final y = p.y;
+      final uvIndex =
+          uvPixelStride * (x / 2).floor() + uvRowStride * (y / 2).floor();
+      final index = y * uvRowStride +
+          x; // Use the row stride instead of the image width as some devices pad the image data, and in those cases the image width != bytesPerRow. Using width will give you a distored image.
+      final yp = image.planes[0].bytes[index];
+      final up = image.planes[1].bytes[uvIndex];
+      final vp = image.planes[2].bytes[uvIndex];
+      p.r = (yp + vp * 1436 / 1024 - 179).round().clamp(0, 255).toInt();
+      p.g = (yp - up * 46549 / 131072 + 44 - vp * 93604 / 131072 + 91)
+          .round()
+          .clamp(0, 255)
+          .toInt();
+      p.b = (yp + up * 1814 / 1024 - 227).round().clamp(0, 255).toInt();
     }
-  }
-}
 
-/// ROTATION changes - not working as need to be from the Exif (which is empty)
-
-Future<int> getExifRotation(CameraImage cameraImage) async {
-  final exifData = await readExifFromBytes(cameraImage.planes[0].bytes);
-  final ifd = exifData['Image Orientation'];
-
-  if (ifd != null) {
-    return ifd.values.toList()[0];
-  }
-  return 1;
-}
-
-image_lib.Image applyExifRotation(image_lib.Image image, int exifRotation) {
-  if (exifRotation == 1) {
-    return image_lib.copyRotate(image, angle: 0);
-  } else if (exifRotation == 3) {
-    return image_lib.copyRotate(image, angle: 180);
-  } else if (exifRotation == 6) {
-    return image_lib.copyRotate(image, angle: 90);
-  } else if (exifRotation == 8) {
-    return image_lib.copyRotate(image, angle: 270);
+    return img;
   }
 
-  return image;
-}
+  static Image? processCameraImage(CameraImage cameraImage) {
+    Image? image = ImageUtils.convertCameraImage(cameraImage);
 
-Future<void> saveImage(
-  image_lib.Image image,
-  String path,
-  String name,
-) async {
-  Uint8List bytes = image_lib.encodeJpg(image);
-  final fileOnDevice = File('$path/$name.jpg');
-  await fileOnDevice.writeAsBytes(bytes, flush: true);
+    if (Platform.isIOS) {
+      // ios, default camera image is portrait view
+      // rotate 270 to the view that top is on the left, bottom is on the right
+      // image ^4.0.17 error here
+      image = copyRotate(image!, angle: 270);
+    }
+    if (Platform.isAndroid) {
+      // ios, default camera image is portrait view
+      // rotate 270 to the view that top is on the left, bottom is on the right
+      // image ^4.0.17 error here
+      image = copyRotate(image!, angle: 90);
+    }
+
+    return image;
+    // processImage(inputImage);
+  }
 }

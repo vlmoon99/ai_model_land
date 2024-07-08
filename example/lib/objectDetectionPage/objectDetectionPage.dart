@@ -31,6 +31,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
 
   /// Controller
   CameraController? _cameraController;
+  get _controller => _cameraController;
 
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
 
@@ -42,45 +43,35 @@ class _ObjectDetectionState extends State<ObjectDetection>
       required bool async}) async {
     late TensorFlowResponsModel output;
     output = await _aiModelLand.runTaskOnTheModel(
-        request: TensorFlowRequestModel(dataMulti: inputObject, async: async),
+        request: TensorFlowRequestModel(dataMulti: [inputObject], async: async),
         baseModel: baseModel) as TensorFlowResponsModel;
     return output.predictForMulti!.values.toList() as List<List<Object>>;
   }
 
-  void _convertCameraImage(CameraImage cameraImage) {
-    convertCameraImageToImage(cameraImage).then((image) {
-      if (image != null) {
-        if (Platform.isAndroid) {
-          image = image_lib.copyRotate(image, angle: 90);
-        }
-
-        final results = analyseImage(image);
+  void _convertCameraImage(CameraImage cameraImage) async {
+    // var image = await ImageUtilsIsolate.convertCameraImage(cameraImage);
+    var image = ImageUtils.convertCameraImage(cameraImage);
+    if (image != null) {
+      if (Platform.isAndroid) {
+        image = image_lib.copyRotate(image, angle: 90);
       }
-    });
+
+      // print("Image $image");
+      final results = analyseImage(image);
+    }
   }
 
-  Future<Map<String, dynamic>> analyseImage(image_lib.Image? image) async {
-    var preProcessStart = DateTime.now().millisecondsSinceEpoch;
-
+  Future<Map<String, dynamic>> analyseImage(image_lib.Image image) async {
     /// Pre-process the image
     /// Resizing image for model [300, 300]
     final imageInput = image_lib.copyResize(
-      image!,
+      image,
       width: 300,
       height: 300,
     );
 
     // Creating matrix representation, [300, 300, 3]
-    final imageMatrix = List.generate(
-      imageInput.height,
-      (y) => List.generate(
-        imageInput.width,
-        (x) {
-          final pixel = imageInput.getPixel(x, y);
-          return [pixel.r, pixel.g, pixel.b];
-        },
-      ),
-    );
+    final imageMatrix = imageToByteListUint8(imageInput, 300);
 
     final output = await runModel(
         baseModel: widget.baseModel, inputObject: imageMatrix, async: false);
@@ -132,22 +123,39 @@ class _ObjectDetectionState extends State<ObjectDetection>
     };
   }
 
+  Uint8List imageToByteListUint8(image_lib.Image image, int inputSize) {
+    var convertedBytes = Uint8List(1 * inputSize * inputSize * 3);
+    var buffer = Uint8List.view(convertedBytes.buffer);
+    int pixelIndex = 0;
+
+    for (int y = 0; y < inputSize; y++) {
+      for (int x = 0; x < inputSize; x++) {
+        var pixel = image.getPixel(x, y);
+        buffer[pixelIndex++] = pixel.r as int;
+        buffer[pixelIndex++] = pixel.g as int;
+        buffer[pixelIndex++] = pixel.b as int;
+      }
+    }
+
+    return convertedBytes;
+  }
+
   void _initializeCamera() async {
     try {
       cameras = await availableCameras();
       // cameras[0] for back-camera
       _cameraController = CameraController(
         cameras[0],
-        ResolutionPreset.medium,
+        ResolutionPreset.low,
         enableAudio: false,
       )..initialize().then((_) async {
-          await _cameraController!.startImageStream(onLatestImageAvailable);
+          await _controller.startImageStream(onLatestImageAvailable);
           setState(() {});
 
           /// previewSize is size of each image frame captured by controller
           ///
           /// 352x288 on iOS, 240p (320x240) on Android with ResolutionPreset.low
-          ScreenParams.previewSize = _cameraController!.value.previewSize!;
+          // ScreenParams.previewSize = _controller!.value.previewSize!;
         });
     } catch (e) {
       throw Exception('Some gone wrong $e');
@@ -170,7 +178,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     switch (state) {
       case AppLifecycleState.inactive:
-        _cameraController?.stopImageStream();
+        _controller?.stopImageStream();
         break;
       case AppLifecycleState.resumed:
         _initializeCamera();
@@ -182,38 +190,38 @@ class _ObjectDetectionState extends State<ObjectDetection>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cameraController?.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+    if (_controller == null || !_controller!.value.isInitialized) {
       return const SizedBox.shrink();
     }
 
-    var aspect = 1 / _cameraController!.value.aspectRatio;
+    var aspect = 1 / _controller!.value.aspectRatio;
 
     return Stack(
       children: [
         AspectRatio(
           aspectRatio: aspect,
-          child: CameraPreview(_cameraController!),
+          child: CameraPreview(_controller!),
         ),
         // Bounding boxes
-        AspectRatio(
-          aspectRatio: aspect,
-          child: _boundingBoxes(),
-        ),
+        // AspectRatio(
+        //   aspectRatio: aspect,
+        //   child: _boundingBoxes(),
+        // ),
       ],
     );
   }
 
-  Widget _boundingBoxes() {
-    if (results == null) {
-      return const SizedBox.shrink();
-    }
-    return Stack(
-        children: results!.map((box) => BoxWidget(result: box)).toList());
-  }
+  // Widget _boundingBoxes() {
+  //   if (results == null) {
+  //     return const SizedBox.shrink();
+  //   }
+  //   return Stack(
+  //       children: results!.map((box) => BoxWidget(result: box)).toList());
+  // }
 }
