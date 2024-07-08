@@ -195,19 +195,24 @@ class TensorFlowLite extends ProviderAiService {
 
   Future<TensorFlowResponsModel> multiInputinteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
-    final Map<int, List<dynamic>> outputTensors = creatOutputTensorsMulty();
+    // final Map<int, List<dynamic>> outputTensors = creatOutputTensorsMulty();
+    final output = {
+      0: [List<List<num>>.filled(10, List<num>.filled(4, 0))],
+      1: [List<num>.filled(10, 0)],
+      2: [List<num>.filled(10, 0)],
+      3: [0.0],
+    };
 
     if (tensorRequest.async == true) {
       _isolateInterpreter =
           await IsolateInterpreter.create(address: _interpreter.address);
 
       await _isolateInterpreter!
-          .runForMultipleInputs(tensorRequest.dataMulti!, outputTensors);
+          .runForMultipleInputs(tensorRequest.dataMulti!, output);
     } else {
-      _interpreter.runForMultipleInputs(
-          tensorRequest.dataMulti!, outputTensors);
+      _interpreter.runForMultipleInputs(tensorRequest.dataMulti!, output);
     }
-    return TensorFlowResponsModel(predictForMulti: outputTensors);
+    return TensorFlowResponsModel(predictForMulti: output);
   }
 
   Map<int, List<dynamic>> creatOutputTensorsMulty() {
