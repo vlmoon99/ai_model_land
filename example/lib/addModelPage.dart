@@ -107,11 +107,6 @@ class _AddModelPageState extends State<AddModelPage> {
                           controller: sorceController,
                           decoration: InputDecoration(labelText: 'Input URL'),
                         ),
-                  // TextField(
-                  //   controller: sorceController,
-                  //   decoration: InputDecoration(labelText: 'Source'),
-                  // ),
-                  // SizedBox(height: 20),
                   TextField(
                     controller: nameFileController,
                     decoration: InputDecoration(labelText: 'Name File'),

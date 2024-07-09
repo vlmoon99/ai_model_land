@@ -1,7 +1,6 @@
 import 'package:ai_model_land_example/objectDetectionPage/recognition.dart';
 import 'package:flutter/material.dart';
 
-/// Individual bounding box
 class BoxWidget extends StatelessWidget {
   final Recognition result;
 
@@ -9,7 +8,6 @@ class BoxWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Color for bounding box
     Color color = Colors.primaries[
         (result.label.length + result.label.codeUnitAt(0) + result.id) %
             Colors.primaries.length];

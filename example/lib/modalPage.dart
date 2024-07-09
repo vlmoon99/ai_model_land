@@ -355,6 +355,7 @@ class _ModelPageState extends State<ModelPage> {
                   ),
                 )),
             SizedBox(height: 9),
+            Text('Download lables befor start'),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -362,6 +363,7 @@ class _ModelPageState extends State<ModelPage> {
                   MaterialPageRoute(
                     builder: (context) => (ObjectDetection(
                       baseModel: widget.baseModel,
+                      lables: lables!,
                     )),
                   ),
                 );
