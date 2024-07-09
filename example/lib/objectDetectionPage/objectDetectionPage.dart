@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ai_model_land/ai_model_land_lib.dart';
@@ -8,6 +9,7 @@ import 'package:ai_model_land_example/objectDetectionPage/box_widget.dart';
 import 'package:ai_model_land_example/objectDetectionPage/convert.dart';
 import 'package:ai_model_land_example/objectDetectionPage/recognition.dart';
 import 'package:ai_model_land_example/objectDetectionPage/screen_params.dart';
+import 'package:ai_model_land_example/objectDetectionPage/stats.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -18,7 +20,9 @@ import '../singlton/ai_model_provider.dart';
 
 class ObjectDetection extends StatefulWidget {
   final BaseModel baseModel;
-  const ObjectDetection({super.key, required this.baseModel});
+  final String lables;
+  const ObjectDetection(
+      {super.key, required this.baseModel, required this.lables});
 
   @override
   State<ObjectDetection> createState() => _ObjectDetectionState();
@@ -33,56 +37,70 @@ class _ObjectDetectionState extends State<ObjectDetection>
   CameraController? _cameraController;
   get _controller => _cameraController;
 
+  List<String>? _lables;
+
+  Map<String, String>? stats;
+
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
 
   List<Recognition>? results;
 
-  Future<List<List<Object>>> runModel(
+  bool _isAnalyzing = false;
+
+  Future<List<dynamic>> runModel(
       {required BaseModel baseModel,
       required List<Object> inputObject,
       required bool async}) async {
-    late TensorFlowResponsModel output;
-    output = await _aiModelLand.runTaskOnTheModel(
+    final output = await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(dataMulti: [inputObject], async: async),
         baseModel: baseModel) as TensorFlowResponsModel;
-    return output.predictForMulti!.values.toList() as List<List<Object>>;
+    return output.predictForMulti!.values.toList();
   }
 
   void _convertCameraImage(CameraImage cameraImage) async {
-    // var image = await ImageUtilsIsolate.convertCameraImage(cameraImage);
-    var image = ImageUtils.convertCameraImage(cameraImage);
-    if (image != null) {
-      if (Platform.isAndroid) {
-        image = image_lib.copyRotate(image, angle: 90);
-      }
+    try {
+      var preConversionTime = DateTime.now().millisecondsSinceEpoch;
+      if (_isAnalyzing) return;
+      _isAnalyzing = true;
+      var image = ImageUtils.convertCameraImage(cameraImage);
+      if (image != null) {
+        if (Platform.isAndroid) {
+          image = image_lib.copyRotate(image, angle: 90);
+        }
 
-      // print("Image $image");
-      final results = analyseImage(image);
+        final output = await analyseImage(image, preConversionTime);
+        if (mounted) {
+          setState(() {
+            stats = output['stats'];
+            results = output['recognitions'];
+          });
+        }
+      }
+      _isAnalyzing = false;
+    } catch (e) {
+      throw Exception("$e");
     }
   }
 
-  Future<Map<String, dynamic>> analyseImage(image_lib.Image image) async {
-    /// Pre-process the image
-    /// Resizing image for model [300, 300]
+  Future<Map<String, dynamic>> analyseImage(
+      image_lib.Image image, int preConversionTime) async {
     final imageInput = image_lib.copyResize(
       image,
       width: 300,
       height: 300,
     );
 
-    // Creating matrix representation, [300, 300, 3]
-    final imageMatrix = imageToByteListUint8(imageInput, 300);
+    final imageMatrix = ImageUtils.imageToByteListUint8(imageInput, 300);
 
     final output = await runModel(
-        baseModel: widget.baseModel, inputObject: imageMatrix, async: false);
+        baseModel: widget.baseModel, inputObject: imageMatrix, async: true);
 
-    // Location
-    final locationsRaw = output.first as List<double>;
+    final locationsRaw = output.first.first as List<List<double>>;
 
-    // final List<Rect> locations = locationsRaw
-    //     .map((value) => (value * 300)).toList()
-    //     .map((rect) => Rect.fromLTRB(rect[1], rect[0], rect[3], rect[2]))
-    //     .toList();
+    final List<Rect> locations = locationsRaw
+        .map((list) => list.map((value) => (value * 300)).toList())
+        .map((rect) => Rect.fromLTRB(rect[1], rect[0], rect[3], rect[2]))
+        .toList();
 
     // Classes
     final classesRaw = output.elementAt(1).first as List<double>;
@@ -95,67 +113,69 @@ class _ObjectDetectionState extends State<ObjectDetection>
     final numberOfDetectionsRaw = output.last.first as double;
     final numberOfDetections = numberOfDetectionsRaw.toInt();
 
-    // final List<String> classification = [];
-    // for (var i = 0; i < numberOfDetections; i++) {
-    //   classification.add(_labels![classes[i]]);
-    // }
+    final List<String> classification = [];
+    for (var i = 0; i < numberOfDetections; i++) {
+      classification.add(_lables![classes[i]]);
+    }
 
-    // /// Generate recognitions
-    // List<Recognition> recognitions = [];
-    // for (int i = 0; i < numberOfDetections; i++) {
-    //   // Prediction score
-    //   var score = scores[i];
-    //   // Label string
-    //   var label = classification[i];
+    /// Generate recognitions
+    List<Recognition> recognitions = [];
+    for (int i = 0; i < numberOfDetections; i++) {
+      var score = scores[i];
+      var label = classification[i];
 
-    //   if (score > 0.5) {
-    //     recognitions.add(
-    //       Recognition(i, label, score, locations[i]),
-    //     );
-    //   }
-    // }
+      if (score > 0.5) {
+        recognitions.add(
+          Recognition(i, label, score, locations[i]),
+        );
+      }
+    }
+
+    var totalElapsedTime =
+        DateTime.now().millisecondsSinceEpoch - preConversionTime;
 
     return {
-      // "recognitions": recognitions,
+      "recognitions": recognitions,
       "stats": <String, String>{
         'Frame': '${image.width} X ${image.height}',
+        'Total prediction time:': '$totalElapsedTime',
       },
     };
   }
 
-  Uint8List imageToByteListUint8(image_lib.Image image, int inputSize) {
-    var convertedBytes = Uint8List(1 * inputSize * inputSize * 3);
-    var buffer = Uint8List.view(convertedBytes.buffer);
-    int pixelIndex = 0;
-
-    for (int y = 0; y < inputSize; y++) {
-      for (int x = 0; x < inputSize; x++) {
-        var pixel = image.getPixel(x, y);
-        buffer[pixelIndex++] = pixel.r as int;
-        buffer[pixelIndex++] = pixel.g as int;
-        buffer[pixelIndex++] = pixel.b as int;
-      }
+  void loadLabels() async {
+    File lebelsFile = File(widget.lables);
+    if (await lebelsFile.exists()) {
+      final List<String> lableList =
+          await convertFileToList(lables: lebelsFile);
+      setState(() {
+        _lables = lableList;
+      });
     }
+  }
 
-    return convertedBytes;
+  Future<List<String>> convertFileToList({required File lables}) async {
+    String fileContent = await lables.readAsString();
+    List<String> lines = fileContent
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines;
   }
 
   void _initializeCamera() async {
     try {
       cameras = await availableCameras();
-      // cameras[0] for back-camera
       _cameraController = CameraController(
         cameras[0],
         ResolutionPreset.low,
         enableAudio: false,
       )..initialize().then((_) async {
           await _controller.startImageStream(onLatestImageAvailable);
-          setState(() {});
+          ScreenParams.previewSize = _controller!.value.previewSize!;
 
-          /// previewSize is size of each image frame captured by controller
-          ///
-          /// 352x288 on iOS, 240p (320x240) on Android with ResolutionPreset.low
-          // ScreenParams.previewSize = _controller!.value.previewSize!;
+          setState(() {});
         });
     } catch (e) {
       throw Exception('Some gone wrong $e');
@@ -168,17 +188,19 @@ class _ObjectDetectionState extends State<ObjectDetection>
 
   @override
   void initState() {
-    // TODO: implement initState
-    super.initState();
     WidgetsBinding.instance.addObserver(this);
+    List<String>? _lables;
+    List<Recognition>? results;
     _initializeCamera();
+    loadLabels();
+    super.initState();
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.inactive:
-        _controller?.stopImageStream();
+        _cameraController?.stopImageStream();
         break;
       case AppLifecycleState.resumed:
         _initializeCamera();
@@ -196,10 +218,10 @@ class _ObjectDetectionState extends State<ObjectDetection>
 
   @override
   Widget build(BuildContext context) {
+    ScreenParams.screenSize = MediaQuery.sizeOf(context);
     if (_controller == null || !_controller!.value.isInitialized) {
       return const SizedBox.shrink();
     }
-
     var aspect = 1 / _controller!.value.aspectRatio;
 
     return Stack(
@@ -208,20 +230,38 @@ class _ObjectDetectionState extends State<ObjectDetection>
           aspectRatio: aspect,
           child: CameraPreview(_controller!),
         ),
-        // Bounding boxes
-        // AspectRatio(
-        //   aspectRatio: aspect,
-        //   child: _boundingBoxes(),
-        // ),
+        _statsWidget(),
+        AspectRatio(
+          aspectRatio: aspect,
+          child: _boundingBoxes(),
+        ),
       ],
     );
   }
 
-  // Widget _boundingBoxes() {
-  //   if (results == null) {
-  //     return const SizedBox.shrink();
-  //   }
-  //   return Stack(
-  //       children: results!.map((box) => BoxWidget(result: box)).toList());
-  // }
+  Widget _statsWidget() => (stats != null)
+      ? Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            color: Colors.white.withAlpha(150),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: stats!.entries
+                    .map((e) => StatsWidget(e.key, e.value))
+                    .toList(),
+              ),
+            ),
+          ),
+        )
+      : const SizedBox.shrink();
+
+  Widget _boundingBoxes() {
+    if (results == null) {
+      return const SizedBox.shrink();
+    }
+    return Stack(
+        children: results!.map((box) => BoxWidget(result: box)).toList());
+  }
 }

@@ -68,48 +68,66 @@ class ImageUtils {
     );
   }
 
-  static Image convertYUV420ToImage(CameraImage image) {
-    final uvRowStride = image.planes[1].bytesPerRow;
-    final uvPixelStride = image.planes[1].bytesPerPixel ?? 0;
-    final img = Image(width: image.width, height: image.height);
-    for (final p in img) {
-      final x = p.x;
-      final y = p.y;
-      final uvIndex =
-          uvPixelStride * (x / 2).floor() + uvRowStride * (y / 2).floor();
-      final index = y * uvRowStride +
-          x; // Use the row stride instead of the image width as some devices pad the image data, and in those cases the image width != bytesPerRow. Using width will give you a distored image.
-      final yp = image.planes[0].bytes[index];
-      final up = image.planes[1].bytes[uvIndex];
-      final vp = image.planes[2].bytes[uvIndex];
-      p.r = (yp + vp * 1436 / 1024 - 179).round().clamp(0, 255).toInt();
-      p.g = (yp - up * 46549 / 131072 + 44 - vp * 93604 / 131072 + 91)
-          .round()
-          .clamp(0, 255)
-          .toInt();
-      p.b = (yp + up * 1814 / 1024 - 227).round().clamp(0, 255).toInt();
-    }
+  static Image convertYUV420ToImage(CameraImage cameraImage) {
+    final width = cameraImage.width;
+    final height = cameraImage.height;
 
-    return img;
+    final uvRowStride = cameraImage.planes[1].bytesPerRow;
+    final uvPixelStride = cameraImage.planes[1].bytesPerPixel!;
+
+    final yPlane = cameraImage.planes[0].bytes;
+    final uPlane = cameraImage.planes[1].bytes;
+    final vPlane = cameraImage.planes[2].bytes;
+
+    final image = Image(width: width, height: height);
+
+    var uvIndex = 0;
+
+    for (var y = 0; y < height; y++) {
+      var pY = y * width;
+      var pUV = uvIndex;
+
+      for (var x = 0; x < width; x++) {
+        final yValue = yPlane[pY];
+        final uValue = uPlane[pUV];
+        final vValue = vPlane[pUV];
+
+        final r = yValue + 1.402 * (vValue - 128);
+        final g =
+            yValue - 0.344136 * (uValue - 128) - 0.714136 * (vValue - 128);
+        final b = yValue + 1.772 * (uValue - 128);
+
+        image.setPixelRgba(x, y, r.toInt(), g.toInt(), b.toInt(), 255);
+
+        pY++;
+        if (x % 2 == 1 && uvPixelStride == 2) {
+          pUV += uvPixelStride;
+        } else if (x % 2 == 1 && uvPixelStride == 1) {
+          pUV++;
+        }
+      }
+
+      if (y % 2 == 1) {
+        uvIndex += uvRowStride;
+      }
+    }
+    return image;
   }
 
-  static Image? processCameraImage(CameraImage cameraImage) {
-    Image? image = ImageUtils.convertCameraImage(cameraImage);
+  static Uint8List imageToByteListUint8(Image image, int inputSize) {
+    var convertedBytes = Uint8List(1 * inputSize * inputSize * 3);
+    var buffer = Uint8List.view(convertedBytes.buffer);
+    int pixelIndex = 0;
 
-    if (Platform.isIOS) {
-      // ios, default camera image is portrait view
-      // rotate 270 to the view that top is on the left, bottom is on the right
-      // image ^4.0.17 error here
-      image = copyRotate(image!, angle: 270);
-    }
-    if (Platform.isAndroid) {
-      // ios, default camera image is portrait view
-      // rotate 270 to the view that top is on the left, bottom is on the right
-      // image ^4.0.17 error here
-      image = copyRotate(image!, angle: 90);
+    for (int y = 0; y < inputSize; y++) {
+      for (int x = 0; x < inputSize; x++) {
+        var pixel = image.getPixel(x, y);
+        buffer[pixelIndex++] = pixel.r as int;
+        buffer[pixelIndex++] = pixel.g as int;
+        buffer[pixelIndex++] = pixel.b as int;
+      }
     }
 
-    return image;
-    // processImage(inputImage);
+    return convertedBytes;
   }
 }
