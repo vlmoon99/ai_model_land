@@ -14,7 +14,13 @@ class NetworkService {
   }
   Future<void> deleteModel({required BaseModel model}) async {
     final fileOnDevice = File('${model.source}');
-    await fileOnDevice.delete();
+    if (await fileOnDevice.exists()) {
+      try {
+        await fileOnDevice.delete();
+      } catch (e) {
+        throw Exception("$e");
+      }
+    }
   }
 
   Future<BaseModel> downloadModelToAppDir(
