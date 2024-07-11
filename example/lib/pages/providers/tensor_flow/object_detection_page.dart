@@ -1,22 +1,20 @@
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
-import 'package:ai_model_land_example/objectDetectionPage/box_widget.dart';
-import 'package:ai_model_land_example/objectDetectionPage/convert.dart';
-import 'package:ai_model_land_example/objectDetectionPage/recognition.dart';
-import 'package:ai_model_land_example/objectDetectionPage/screen_params.dart';
-import 'package:ai_model_land_example/objectDetectionPage/stats.dart';
-import 'package:flutter/foundation.dart';
+import 'package:ai_model_land_example/modules/recognition.dart';
+import 'package:ai_model_land_example/shared_widgets/box_widget.dart';
+import 'package:ai_model_land_example/modules/screen_params.dart';
+import 'package:ai_model_land_example/shared_widgets/stats.dart';
+import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as image_lib;
 
-import '../singlton/ai_model_provider.dart';
+import '../../../modules/ai_model_provider.dart';
 
 class ObjectDetection extends StatefulWidget {
   final BaseModel baseModel;
@@ -62,7 +60,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
       var preConversionTime = DateTime.now().millisecondsSinceEpoch;
       if (_isAnalyzing) return;
       _isAnalyzing = true;
-      var image = ImageUtils.convertCameraImage(cameraImage);
+      var image = UtilsClass.convertCameraImage(cameraImage);
       if (image != null) {
         if (Platform.isAndroid) {
           image = image_lib.copyRotate(image, angle: 90);
@@ -90,7 +88,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
       height: 300,
     );
 
-    final imageMatrix = ImageUtils.imageToByteListUint8(imageInput, 300);
+    final imageMatrix = UtilsClass.imageToByteListUint8(imageInput, 300);
 
     final output = await runModel(
         baseModel: widget.baseModel, inputObject: imageMatrix, async: true);

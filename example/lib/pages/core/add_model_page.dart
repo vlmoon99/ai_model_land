@@ -1,11 +1,9 @@
 import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
+import 'package:ai_model_land_example/modules/ai_model_provider.dart';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:ai_model_land/ai_model_land_lib.dart';
-import 'package:flutter/services.dart';
-import 'package:ai_model_land/ai_model_land.dart';
 
 class AddModelPage extends StatefulWidget {
   const AddModelPage({Key? key}) : super(key: key);
