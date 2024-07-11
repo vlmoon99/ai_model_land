@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:ai_model_land/modules/core/task_response_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
-import 'package:ai_model_land_example/main.dart';
-import 'package:ai_model_land_example/objectDetectionPage/objectDetectionPage.dart';
-import 'package:ai_model_land_example/preprocesingClass.dart';
+import 'package:ai_model_land_example/pages/providers/tensor_flow/object_detection_page.dart';
+import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:image/image.dart' as img;
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
-import 'package:ai_model_land_example/singlton/ai_model_provider.dart';
+import 'package:ai_model_land_example/modules/ai_model_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +22,7 @@ class ModelPage extends StatefulWidget {
 
 class _ModelPageState extends State<ModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
-  final Preprocesingclass preprocesingclass = Preprocesingclass();
+  final UtilsClass preprocesingclass = UtilsClass();
 
   Uint8List? imgByteList;
 
