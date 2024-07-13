@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/core/task_request_model.dart';
 import 'package:ai_model_land/modules/core/task_response_model.dart';
-import 'package:ai_model_land/services/ai_provaiders/tensor_flow/tensorFlowLite.dart';
+import 'package:ai_model_land/services/ai_providers/tensor_flow/tensorFlowLite.dart';
 import 'package:ai_model_land/services/file_interaction/local-network_service.dart';
 import 'package:ai_model_land/services/platform_info.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
@@ -13,13 +13,13 @@ class AiService {
 
   final PlatformInfo platformInfo;
 
-  final Map<ModelFormat, ProviderAiService> provaiderService = {};
+  final Map<ModelFormat, ProviderAiService> providerService = {};
 
   AiService(
       {required this.networkInteraction,
       required final TensorFlowLite tensorFlowProviderService,
       required this.platformInfo}) {
-    provaiderService.putIfAbsent(
+    providerService.putIfAbsent(
         ModelFormat.tflite, () => tensorFlowProviderService);
   }
 
@@ -35,11 +35,11 @@ class AiService {
   //Also we need to choose the source (Network,Assets) and the path
   Future<TaskResponseModel> runTaskOnTheModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
-    if (provaiderService[baseModel.format] == null) {
+    if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
 
-    return await provaiderService[baseModel.format]!.runTaskOnTheModel(request);
+    return await providerService[baseModel.format]!.runTaskOnTheModel(request);
   }
 
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
@@ -50,23 +50,23 @@ class AiService {
 
   Future<bool> loadModelToProvider(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
-    if (provaiderService[baseModel.format] == null) {
+    if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
 
-    return await provaiderService[baseModel.format]!
+    return await providerService[baseModel.format]!
         .addModel(request: request, baseModel: baseModel);
   }
 
   Future<void> stopModel({required BaseModel baseModel}) async {
-    if (provaiderService[baseModel.format] == null) {
+    if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
 
     if (baseModel.format == null) {
       throw Exception('Incorrect Base Model');
     }
-    await provaiderService[baseModel.format]!.stopModel();
+    await providerService[baseModel.format]!.stopModel();
   }
 
   Future<BaseModel> downloadFileToAppDir({required BaseModel baseModel}) async {
@@ -88,14 +88,14 @@ class AiService {
 
   Future<void> restartModel(
       {required BaseModel baseModel, required TaskRequestModel request}) async {
-    if (provaiderService[baseModel.format] == null) {
+    if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
-    await provaiderService[baseModel.format]!
+    await providerService[baseModel.format]!
         .restartModel(request: request, baseModel: baseModel);
   }
 
   bool isModelLoaded({required BaseModel baseModel}) {
-    return provaiderService[baseModel.format]!.isModelLoaded();
+    return providerService[baseModel.format]!.isModelLoaded();
   }
 }

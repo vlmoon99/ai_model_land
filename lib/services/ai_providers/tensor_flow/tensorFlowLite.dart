@@ -37,7 +37,7 @@ class TensorFlowLite extends ProviderAiService {
               if (await file.exists()) {
                 _interpreter = await Interpreter.fromFile(file);
                 getInformationAndIsolate();
-                print('interpreter by file was create successful');
+                print('Interpreter from file was created successfully');
                 return true;
               } else {
                 print('File not exist');
@@ -48,7 +48,7 @@ class TensorFlowLite extends ProviderAiService {
             {
               _interpreter = await Interpreter.fromAsset(baseModel.source);
               getInformationAndIsolate();
-              print('interpreter by asset was create successful');
+              print('Interpreter from asset was created successfully');
               return true;
             }
           case LoadModelWay.fromBuffer:
@@ -64,9 +64,9 @@ class TensorFlowLite extends ProviderAiService {
             }
           case LoadModelWay.fromAddress:
             {
-              if (request.adressModel != null) {
+              if (request.addressModel != null) {
                 getInformationAndIsolate();
-                print('interpreter by asset was create successful');
+                print('Interpreter from asset was created successfully');
                 return true;
               } else {
                 print('Not add adress model for adress');
@@ -74,7 +74,7 @@ class TensorFlowLite extends ProviderAiService {
             }
         }
       } else {
-        throw Exception("Not choose way add model");
+        throw Exception("Model load way not specified");
       }
     } catch (e) {
       print("Error while creating interpreter: $e");
@@ -142,44 +142,44 @@ class TensorFlowLite extends ProviderAiService {
       if (tensorRequest.data == null && tensorRequest.dataMulti == null) {
         throw Exception('Data is absent');
       } else if (tensorRequest.data != null) {
-        return await singlInputinteraction(tensorRequest: tensorRequest);
+        return await singleInputInteraction(tensorRequest: tensorRequest);
       } else {
-        return await multiInputinteraction(tensorRequest: tensorRequest);
+        return await multiInputInteraction(tensorRequest: tensorRequest);
       }
     } catch (e) {
       throw Exception("Model no run successful: $e");
     }
   }
 
-  Future<TensorFlowResponsModel> singlInputinteraction(
+  Future<TensorFlowResponseModel> singleInputInteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
-    final List<dynamic> outputTensor = creatOutputTensorsSingl();
+    final List<dynamic> outputTensor = createOutputTensorsSingle();
 
     if (tensorRequest.async == true && !_interpreter.isDeleted) {
       await _isolateInterpreter!.run(tensorRequest.data!, outputTensor);
     } else {
       _interpreter.run(tensorRequest.data!, outputTensor);
     }
-    if (tensorRequest.lablesFile != null && tensorRequest.threshold != null) {
-      File lebelsFile = File(tensorRequest.lablesFile!);
-      if (await lebelsFile.exists()) {
+    if (tensorRequest.labelsFile != null && tensorRequest.threshold != null) {
+      File labelsFile = File(tensorRequest.labelsFile!);
+      if (await labelsFile.exists()) {
         final List<String> lableList =
-            await convertFileToList(lables: lebelsFile);
+            await convertFileToList(lables: labelsFile);
         final List<double> outputList = outputTensor[0];
-        final List<String> pridict = getPredict(
+        final List<String> predict = getPredict(
             lableList: lableList,
             outputList: outputList,
             threshold: tensorRequest.threshold!);
-        return TensorFlowResponsModel(predictForSingle: pridict);
+        return TensorFlowResponseModel(predictForSingle: predict);
       } else {
         throw Exception('Labels file not exist');
       }
     } else {
-      return TensorFlowResponsModel(predictForSingle: outputTensor[0]);
+      return TensorFlowResponseModel(predictForSingle: outputTensor[0]);
     }
   }
 
-  List<dynamic> creatOutputTensorsSingl() {
+  List<dynamic> createOutputTensorsSingle() {
     late List<dynamic> outputTensor;
     if (_outputTypes.toString().contains("float")) {
       outputTensor = List.filled(
@@ -193,9 +193,9 @@ class TensorFlowLite extends ProviderAiService {
     return outputTensor;
   }
 
-  Future<TensorFlowResponsModel> multiInputinteraction(
+  Future<TensorFlowResponseModel> multiInputInteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
-    final Map<int, List<dynamic>> outputTensors = creatOutputTensorsMulty();
+    final Map<int, List<dynamic>> outputTensors = createOutputTensorsMulti();
 
     if (tensorRequest.async == true && !_interpreter.isDeleted) {
       await _isolateInterpreter!
@@ -204,10 +204,10 @@ class TensorFlowLite extends ProviderAiService {
       _interpreter.runForMultipleInputs(
           tensorRequest.dataMulti!, outputTensors);
     }
-    return TensorFlowResponsModel(predictForMulti: outputTensors);
+    return TensorFlowResponseModel(predictForMulti: outputTensors);
   }
 
-  Map<int, List<dynamic>> creatOutputTensorsMulty() {
+  Map<int, List<dynamic>> createOutputTensorsMulti() {
     Map<int, List<dynamic>> outputTensor = {};
     TensorType outputTensorType;
     for (int i = 0; i < _outputTypes.length; i++) {

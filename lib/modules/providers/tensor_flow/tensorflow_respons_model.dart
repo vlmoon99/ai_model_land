@@ -1,11 +1,12 @@
 import 'package:ai_model_land/modules/core/task_response_model.dart';
 
-class TensorFlowResponsModel implements TaskResponseModel {
-  Map<String, dynamic>? predictSinglWithLables;
+class TensorFlowResponseModel implements TaskResponseModel {
+  Map<String, dynamic>? predictSingleWithLabels;
   List<dynamic>? predictForSingle;
   Map<int, Object>? predictForMulti;
-  TensorFlowResponsModel(
+
+  TensorFlowResponseModel(
       {this.predictForSingle,
-      this.predictSinglWithLables,
+      this.predictSingleWithLabels,
       this.predictForMulti});
 }
