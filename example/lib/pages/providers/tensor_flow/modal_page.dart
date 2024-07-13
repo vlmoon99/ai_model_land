@@ -42,7 +42,7 @@ class _ModelPageState extends State<ModelPage> {
         baseModel: baseModel);
   }
 
-  Future<void> deleteMoodel(
+  Future<void> deleteModel(
       {required BaseModel baseModel, required bool fromDevice}) async {
     await _aiModelLand.deleteModel(
         baseModel: baseModel, fromDevice: fromDevice);
@@ -56,19 +56,19 @@ class _ModelPageState extends State<ModelPage> {
       {required BaseModel baseModel,
       required Object inputObject,
       required bool async}) async {
-    late TensorFlowResponsModel output;
+    late TensorFlowResponseModel output;
     if (lables != null) {
       output = await _aiModelLand.runTaskOnTheModel(
           request: TensorFlowRequestModel(
               data: inputObject,
               async: async,
-              lablesFile: lables,
+              labelsFile: lables,
               threshold: double.tryParse(thresholdController.text)),
-          baseModel: baseModel) as TensorFlowResponsModel;
+          baseModel: baseModel) as TensorFlowResponseModel;
     } else {
       output = await _aiModelLand.runTaskOnTheModel(
           request: TensorFlowRequestModel(data: inputObject, async: async),
-          baseModel: baseModel) as TensorFlowResponsModel;
+          baseModel: baseModel) as TensorFlowResponseModel;
     }
 
     setState(() {
@@ -137,9 +137,9 @@ class _ModelPageState extends State<ModelPage> {
     );
 
     if (shouldDelete == true) {
-      await deleteMoodel(baseModel: widget.baseModel, fromDevice: true);
+      await deleteModel(baseModel: widget.baseModel, fromDevice: true);
     } else {
-      await deleteMoodel(baseModel: widget.baseModel, fromDevice: false);
+      await deleteModel(baseModel: widget.baseModel, fromDevice: false);
     }
   }
 
@@ -361,7 +361,7 @@ class _ModelPageState extends State<ModelPage> {
                   MaterialPageRoute(
                     builder: (context) => (ObjectDetection(
                       baseModel: widget.baseModel,
-                      lables: lables!,
+                      labels: lables!,
                     )),
                   ),
                 );

@@ -22,19 +22,7 @@ class _HomePageState extends State<HomePage> {
   Future<List<BaseModel>>? _modelsNetwork;
   Future<Map<String, dynamic>>? posibilitis;
   Future<List<BaseModel>> seeLocal() async {
-    return await _aiModelLand.readAllForType(sourceType: ModelSourceType.local);
-  }
-
-  Future<List<BaseModel>> seeNetwork() async {
-    return await _aiModelLand.readAllForType(
-        sourceType: ModelSourceType.network);
-  }
-
-  void _refreshData() {
-    setState(() {
-      _modelsLocal = seeLocal();
-      _modelsNetwork = seeNetwork();
-    });
+    return await _aiModelLand.readAll();
   }
 
   Future<void> initPlatformState() async {
@@ -62,7 +50,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _modelsLocal = seeLocal();
-    _modelsNetwork = seeNetwork();
     initPlatformState();
     posibilitis = checkPlatformGPUAcceleratorPossibilities();
   }
@@ -132,59 +119,6 @@ class _HomePageState extends State<HomePage> {
                   ),
             SizedBox(height: 20),
             Text("Network models:"),
-            _modelsNetwork == null
-                ? Container()
-                : FutureBuilder<List<BaseModel>>(
-                    key: ValueKey(_modelsNetwork),
-                    future: _modelsNetwork,
-                    builder: (BuildContext context,
-                        AsyncSnapshot<List<BaseModel>> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        return SelectableText('Error: ${snapshot.error}');
-                      } else if (snapshot.hasData &&
-                          snapshot.data!.isNotEmpty) {
-                        return Column(
-                          children: snapshot.data!.map((basemodel) {
-                            return ElevatedButton(
-                              onPressed: () async {
-                                final isDeleteModel = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ModelPage(baseModel: basemodel),
-                                  ),
-                                );
-                                if (isDeleteModel == true) {
-                                  setState(() {
-                                    _modelsNetwork = seeNetwork();
-                                  });
-                                }
-                              },
-                              child: Text(
-                                '${basemodel.nameFile}.${basemodel.format.name}',
-                                style: const TextStyle(
-                                    color: const Color.fromARGB(255, 0, 0, 0)),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                side:
-                                    BorderSide(color: Colors.black, width: 0.5),
-                                backgroundColor:
-                                    Color.fromARGB(255, 255, 255, 255),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.zero, // No border radius
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      } else {
-                        return Text('No network models found');
-                      }
-                    },
-                  ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
@@ -193,7 +127,9 @@ class _HomePageState extends State<HomePage> {
                   MaterialPageRoute(builder: (context) => AddModelPage()),
                 );
                 if (isAddModel == true) {
-                  _refreshData();
+                  setState(() {
+                    _modelsLocal = seeLocal();
+                  });
                 }
               },
               child: Text('Add Model'),

@@ -15,7 +15,7 @@ class AddModelPage extends StatefulWidget {
 class _AddModelPageState extends State<AddModelPage> {
   final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
 
-  final sorceController = TextEditingController();
+  final sourceController = TextEditingController();
   final nameFileController = TextEditingController();
 
   var dropDawnFormat = ModelFormat.tflite;
@@ -33,7 +33,7 @@ class _AddModelPageState extends State<AddModelPage> {
 
     if (result != null) {
       setState(() {
-        sorceController.text = result.files.single.path!;
+        sourceController.text = result.files.single.path!;
       });
     } else {
       return null;
@@ -42,7 +42,7 @@ class _AddModelPageState extends State<AddModelPage> {
 
   Future<BaseModel> addModel() {
     final model = BaseModel(
-        source: sorceController.text,
+        source: sourceController.text,
         nameFile: nameFileController.text,
         format: dropDawnFormat,
         sourceType: dropDawnSourceType);
@@ -95,14 +95,14 @@ class _AddModelPageState extends State<AddModelPage> {
                             ),
                             SizedBox(height: 20),
                             Text(
-                              sorceController.text != null
-                                  ? 'Selected File: ${sorceController.text}'
+                              sourceController.text != null
+                                  ? 'Selected File: ${sourceController.text}'
                                   : 'No file selected.',
                             ),
                           ],
                         )
                       : TextField(
-                          controller: sorceController,
+                          controller: sourceController,
                           decoration: InputDecoration(labelText: 'Input URL'),
                         ),
                   TextField(

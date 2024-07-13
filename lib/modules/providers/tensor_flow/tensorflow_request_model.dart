@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:ai_model_land/modules/core/task_request_model.dart';
 
 class TensorFlowRequestModel implements TaskRequestModel {
-  int? adressModel;
+  int? addressModel;
 
   bool? async;
 
@@ -21,7 +21,7 @@ class TensorFlowRequestModel implements TaskRequestModel {
   @override
   Uint8List? uint8list;
 
-  int? imgHight;
+  int? imgHeight;
 
   int? imgWidth;
 
@@ -30,7 +30,7 @@ class TensorFlowRequestModel implements TaskRequestModel {
   LoadModelWay? loadModelWay;
 
   @override
-  String? lablesFile;
+  String? labelsFile;
 
   @override
   Object? data;
@@ -43,15 +43,15 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.float32list,
       this.uint32list,
       this.uint64list,
-      this.imgHight,
+      this.imgHeight,
       this.imgWidth,
-      this.lablesFile,
+      this.labelsFile,
       this.uint8list,
       this.threshold,
       this.async,
       this.data,
       this.loadModelWay,
-      this.adressModel,
+      this.addressModel,
       this.dataMulti});
 }
 

@@ -18,9 +18,9 @@ import '../../../modules/ai_model_provider.dart';
 
 class ObjectDetection extends StatefulWidget {
   final BaseModel baseModel;
-  final String lables;
+  final String labels;
   const ObjectDetection(
-      {super.key, required this.baseModel, required this.lables});
+      {super.key, required this.baseModel, required this.labels});
 
   @override
   State<ObjectDetection> createState() => _ObjectDetectionState();
@@ -35,7 +35,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
   CameraController? _cameraController;
   get _controller => _cameraController;
 
-  List<String>? _lables;
+  List<String>? _labels;
 
   Map<String, String>? stats;
 
@@ -51,7 +51,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
       required bool async}) async {
     final output = await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(dataMulti: [inputObject], async: async),
-        baseModel: baseModel) as TensorFlowResponsModel;
+        baseModel: baseModel) as TensorFlowResponseModel;
     return output.predictForMulti!.values.toList();
   }
 
@@ -66,7 +66,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
           image = image_lib.copyRotate(image, angle: 90);
         }
 
-        final output = await analyseImage(image, preConversionTime);
+        final output = await analysisImage(image, preConversionTime);
         if (mounted) {
           setState(() {
             stats = output['stats'];
@@ -80,7 +80,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
     }
   }
 
-  Future<Map<String, dynamic>> analyseImage(
+  Future<Map<String, dynamic>> analysisImage(
       image_lib.Image image, int preConversionTime) async {
     final imageInput = image_lib.copyResize(
       image,
@@ -113,7 +113,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
 
     final List<String> classification = [];
     for (var i = 0; i < numberOfDetections; i++) {
-      classification.add(_lables![classes[i]]);
+      classification.add(_labels![classes[i]]);
     }
 
     /// Generate recognitions
@@ -142,18 +142,18 @@ class _ObjectDetectionState extends State<ObjectDetection>
   }
 
   void loadLabels() async {
-    File lebelsFile = File(widget.lables);
-    if (await lebelsFile.exists()) {
-      final List<String> lableList =
-          await convertFileToList(lables: lebelsFile);
+    File labelsFile = File(widget.labels);
+    if (await labelsFile.exists()) {
+      final List<String> labelList =
+          await convertFileToList(labels: labelsFile);
       setState(() {
-        _lables = lableList;
+        _labels = labelList;
       });
     }
   }
 
-  Future<List<String>> convertFileToList({required File lables}) async {
-    String fileContent = await lables.readAsString();
+  Future<List<String>> convertFileToList({required File labels}) async {
+    String fileContent = await labels.readAsString();
     List<String> lines = fileContent
         .split('\n')
         .map((line) => line.trim())
@@ -187,7 +187,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
-    List<String>? _lables;
+    List<String>? _labels;
     List<Recognition>? results;
     _initializeCamera();
     loadLabels();

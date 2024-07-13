@@ -6,6 +6,6 @@ abstract class TaskRequestModel {
   Uint32List? uint32list;
   Uint64List? uint64list;
   Object? data;
-  String? lablesFile;
+  String? labelsFile;
   List<Object>? dataMulti;
 }
