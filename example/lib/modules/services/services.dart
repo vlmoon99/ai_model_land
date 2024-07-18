@@ -1,6 +1,7 @@
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
+import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class GlobalVM {
@@ -44,11 +45,11 @@ class GlobalVM {
     await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
-  Future<void> runTaskOnTheModel(
+  Future<TensorFlowResponseModel> runTaskOnTheModel(
       {required TensorFlowRequestModel request,
       required BaseModel baseModel}) async {
-    await _aiModelLand.runTaskOnTheModel(
-        request: request, baseModel: baseModel);
+    return await _aiModelLand.runTaskOnTheModel(
+        request: request, baseModel: baseModel) as TensorFlowResponseModel;
   }
 
   Future<void> restartModel(

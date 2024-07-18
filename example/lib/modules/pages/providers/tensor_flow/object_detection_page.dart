@@ -47,9 +47,9 @@ class _ObjectDetectionState extends State<ObjectDetection>
       {required BaseModel baseModel,
       required List<Object> inputObject,
       required bool async}) async {
-    final output = await _aiModelLand.runTaskOnTheModel(
+    final TensorFlowResponseModel output = await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(dataMulti: [inputObject], async: async),
-        baseModel: baseModel) as TensorFlowResponseModel;
+        baseModel: baseModel);
     return output.predictForMulti!.values.toList();
   }
 
