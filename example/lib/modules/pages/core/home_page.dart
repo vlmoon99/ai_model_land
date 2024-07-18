@@ -1,11 +1,11 @@
 import 'package:ai_model_land/ai_model_land.dart';
-import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land_example/modules/ai_model_provider.dart';
-import 'package:ai_model_land_example/pages/core/add_model_page.dart';
-import 'package:ai_model_land_example/pages/providers/tensor_flow/modal_page.dart';
+import 'package:ai_model_land_example/modules/pages/core/add_model_page.dart';
+import 'package:ai_model_land_example/modules/pages/providers/tensor_flow/modal_page.dart';
+import 'package:ai_model_land_example/modules/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
+  final GlobalVM _aiModelLand = Modular.get(key: 'GlobalVM');
   final _aiModelLandPlugin = AiModelLand();
   String _platformVersion = 'Unknown';
   Future<List<BaseModel>>? _modelsLocal;
@@ -122,15 +122,12 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                final isAddModel = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AddModelPage()),
-                );
-                if (isAddModel == true) {
-                  setState(() {
-                    _modelsLocal = seeLocal();
-                  });
-                }
+                Modular.to.navigate('/home/addModel');
+                // if (isAddModel == true) {
+                //   setState(() {
+                //     _modelsLocal = seeLocal();
+                //   });
+                // }
               },
               child: Text('Add Model'),
             ),
