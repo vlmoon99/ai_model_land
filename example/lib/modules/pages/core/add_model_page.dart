@@ -1,9 +1,8 @@
 import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land_example/modules/ai_model_provider.dart';
-
+import 'package:ai_model_land_example/modules/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:ai_model_land/ai_model_land_lib.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class AddModelPage extends StatefulWidget {
   const AddModelPage({Key? key}) : super(key: key);
@@ -13,7 +12,7 @@ class AddModelPage extends StatefulWidget {
 }
 
 class _AddModelPageState extends State<AddModelPage> {
-  final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
+  final GlobalVM _aiModelLand = Modular.get(key: 'GlobalVM');
 
   final sourceController = TextEditingController();
   final nameFileController = TextEditingController();
@@ -139,7 +138,7 @@ class _AddModelPageState extends State<AddModelPage> {
                 });
                 final result = await _modelFuture;
                 if (result != null) {
-                  Navigator.pop(context, true);
+                  Modular.to.navigate('/home');
                 }
               },
               child: Text('Add Model'),

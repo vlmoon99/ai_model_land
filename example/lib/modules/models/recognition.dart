@@ -1,4 +1,4 @@
-import 'package:ai_model_land_example/modules/screen_params.dart';
+import 'package:ai_model_land_example/modules/models/screen_params.dart';
 import 'package:flutter/cupertino.dart';
 
 /// Represents the recognition output from the model

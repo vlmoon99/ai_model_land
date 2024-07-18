@@ -1,4 +1,4 @@
-import 'package:ai_model_land_example/modules/recognition.dart';
+import 'package:ai_model_land_example/modules/models/recognition.dart';
 import 'package:flutter/material.dart';
 
 class BoxWidget extends StatelessWidget {

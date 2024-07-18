@@ -1,20 +1,18 @@
 import 'dart:io';
-
-import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/modules/core/base_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
-import 'package:ai_model_land_example/modules/recognition.dart';
-import 'package:ai_model_land_example/shared_widgets/box_widget.dart';
-import 'package:ai_model_land_example/modules/screen_params.dart';
-import 'package:ai_model_land_example/shared_widgets/stats.dart';
+import 'package:ai_model_land_example/modules/models/recognition.dart';
+import 'package:ai_model_land_example/modules/services/services.dart';
+import 'package:ai_model_land_example/modules/shared_widgets/box_widget.dart';
+import 'package:ai_model_land_example/modules/models/screen_params.dart';
+import 'package:ai_model_land_example/modules/shared_widgets/stats.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image/image.dart' as image_lib;
-
-import '../../../modules/ai_model_provider.dart';
 
 class ObjectDetection extends StatefulWidget {
   final BaseModel baseModel;
@@ -39,7 +37,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
 
   Map<String, String>? stats;
 
-  final AiModelLandLib _aiModelLand = AiModelProvider().aiModelLand;
+  final GlobalVM _aiModelLand = Modular.get(key: 'GlobalVM');
 
   List<Recognition>? results;
 
