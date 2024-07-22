@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:ai_model_land_example/modules/models/ai_model_provider.dart';
 import 'package:ai_model_land_example/modules/app_module.dart';
 import 'package:ai_model_land_example/modules/pages/core/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
@@ -24,28 +23,6 @@ void main() {
     //Catch Errors not caught by Flutter
     //TODO add catcher
   });
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<AiModelProvider>(
-          create: (_) => AiModelProvider(),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: HomePage(),
-      ),
-    );
-  }
 }
 
 class AppWidget extends StatelessWidget {
