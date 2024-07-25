@@ -1,63 +1,44 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:ai_model_land/ai_model_land.dart';
+import 'package:ai_model_land_example/modules/app_module.dart';
+import 'package:ai_model_land_example/modules/pages/core/home_page.dart';
+import 'package:ai_model_land_example/routes/routes.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 void main() {
-  runApp(const MyApp());
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    //Catch Errors caught by Flutter
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      //TODO add catcher
+    };
+    runApp(ModularApp(
+      module: AppModule(),
+      child: AppWidget(),
+    ));
+  }, (error, stack) {
+    print(error.toString());
+    //Catch Errors not caught by Flutter
+    //TODO add catcher
+  });
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _aiModelLandPlugin = AiModelLand();
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _aiModelLandPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
+class AppWidget extends StatelessWidget {
+  const AppWidget();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+    Modular.setInitialRoute(Routes.home.module);
+    return MaterialApp.router(
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
+      debugShowCheckedModeBanner: false,
+      title: 'AI Model Land',
+      routeInformationParser: Modular.routeInformationParser,
+      routerDelegate: Modular.routerDelegate,
     );
   }
 }
