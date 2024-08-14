@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
-import 'package:ai_model_land_example/modules/pages/providers/tensor_flow/object_detection_page.dart';
+import 'package:ai_model_land_example/modules/pages/providers/tensor_flow/page/object_detection_page.dart';
 import 'package:ai_model_land_example/modules/services/services.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:flutter_modular/flutter_modular.dart';
