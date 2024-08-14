@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:ai_model_land_example/modules/app_module.dart';
-import 'package:ai_model_land_example/modules/pages/core/home_page.dart';
+import 'package:ai_model_land_example/modules/pages/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
