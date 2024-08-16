@@ -7,18 +7,20 @@ class Routes {
 
 class _Home extends RouteClass {
   String module = '/home';
+  String page = "/";
   // String addModel = '/addModel';
 }
 
 class _Providers extends RouteClass {
-  String module = '/';
-  String tensorFlow = '/tensorFlow/';
-  String onnx = '/onnx/';
+  String init = '/';
+  String tensorFlow = '/tensorFlow';
+  String onnx = '/onnx';
 }
 
 class _ProvidersInteractions extends RouteClass {
-  String module = '/';
-  String textDetection = '/text-detection/';
+  String init = '/';
+  String textClassification = '/text-detection';
+  String photoDetectionClassification = "/photo-detection-classification";
 }
 
 abstract class RouteClass {
