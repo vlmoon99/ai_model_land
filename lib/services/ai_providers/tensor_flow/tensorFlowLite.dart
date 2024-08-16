@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';
-import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
 
-import 'package:ai_model_land/modules/core/task_request_model.dart';
-import 'package:ai_model_land/modules/core/task_response_model.dart';
-import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_request_model.dart';
-import 'package:ai_model_land/modules/providers/tensor_flow/tensorflow_respons_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
+import 'package:ai_model_land/models/core/task_response_model.dart';
+import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_request_model.dart';
+import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -69,7 +69,7 @@ class TensorFlowLite extends ProviderAiService {
                 print('Interpreter from asset was created successfully');
                 return true;
               } else {
-                print('Not add adress model for adress');
+                print('Not add address model for address');
               }
             }
         }
@@ -77,7 +77,7 @@ class TensorFlowLite extends ProviderAiService {
         throw Exception("Model load way not specified");
       }
     } catch (e) {
-      print("Error while creating interpreter: $e");
+      throw Exception("Error while creating interpreter: $e");
     }
     return false;
   }
@@ -116,7 +116,7 @@ class TensorFlowLite extends ProviderAiService {
   Future<void> restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
-      _interpreter.close();
+      await stopModel();
       await addModel(request: request, baseModel: baseModel);
     } catch (e) {
       throw Exception("Model no restart successful: $e");
@@ -153,6 +153,7 @@ class TensorFlowLite extends ProviderAiService {
 
   Future<TensorFlowResponseModel> singleInputInteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
+    List<String> lableList;
     final List<dynamic> outputTensor = createOutputTensorsSingle();
 
     if (tensorRequest.async == true && !_interpreter.isDeleted) {
@@ -163,20 +164,23 @@ class TensorFlowLite extends ProviderAiService {
     if (tensorRequest.labelsFile != null && tensorRequest.threshold != null) {
       File labelsFile = File(tensorRequest.labelsFile!);
       if (await labelsFile.exists()) {
-        final List<String> lableList =
-            await convertFileToList(lables: labelsFile);
-        final List<double> outputList = outputTensor[0];
-        final List<String> predict = getPredict(
-            lableList: lableList,
-            outputList: outputList,
-            threshold: tensorRequest.threshold!);
-        return TensorFlowResponseModel(predictForSingle: predict);
+        lableList = await convertFileToList(lables: labelsFile);
       } else {
         throw Exception('Labels file not exist');
       }
+    } else if (tensorRequest.labelsList != null &&
+        tensorRequest.threshold != null) {
+      lableList = tensorRequest.labelsList!;
     } else {
       return TensorFlowResponseModel(predictForSingle: outputTensor[0]);
     }
+
+    final List<double> outputList = outputTensor[0];
+    final List<String> predict = getPredict(
+        lableList: lableList,
+        outputList: outputList,
+        threshold: tensorRequest.threshold!);
+    return TensorFlowResponseModel(predictForSingle: predict);
   }
 
   List<dynamic> createOutputTensorsSingle() {
@@ -248,7 +252,7 @@ class TensorFlowLite extends ProviderAiService {
 
   @override
   bool isModelLoaded() {
-    if (_interpreter.isDeleted) {
+    if (_interpreter.isAllocated) {
       return false;
     }
     return true;

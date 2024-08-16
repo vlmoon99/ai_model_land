@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
@@ -6,13 +7,16 @@ import 'package:image/image.dart';
 
 class UtilsClass {
   Future<List<List<double>>> tokenizeInputText(
-      {required String text, required String vocabPath}) async {
+      {required String text,
+      required String vocab,
+      required bool isFile}) async {
     final int _sentenceLen = 256;
 
     final String start = '<START>';
     final String pad = '<PAD>';
     final String unk = '<UNKNOWN>';
-    final Map<String, int> _dict = await _loadDictionary(vocabPath: vocabPath);
+    final Map<String, int> _dict =
+        await _loadDictionary(vocabulary: vocab, isFile: isFile);
 
     // Whitespace tokenization
     final toks = text.split(' ');
@@ -39,8 +43,14 @@ class UtilsClass {
     return [vec];
   }
 
-  Future<Map<String, int>> _loadDictionary({required String vocabPath}) async {
-    final vocab = await File('$vocabPath').readAsString();
+  Future<Map<String, int>> _loadDictionary(
+      {required String vocabulary, required bool isFile}) async {
+    String vocab;
+    if (isFile == true) {
+      vocab = await File('$vocabulary').readAsString();
+    } else {
+      vocab = vocabulary;
+    }
     var dict = <String, int>{};
     final vocabList = vocab.split('\n');
     for (var i = 0; i < vocabList.length; i++) {

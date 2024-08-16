@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 

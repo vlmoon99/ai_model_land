@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land/modules/core/task_request_model.dart';
-import 'package:ai_model_land/modules/core/task_response_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
+import 'package:ai_model_land/models/core/task_response_model.dart';
 import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:ai_model_land/repositories/implements/global_storage.dart';
 import 'package:ai_model_land/services/ai_service.dart';

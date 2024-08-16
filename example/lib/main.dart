@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:ai_model_land_example/modules/app_module.dart';
-import 'package:ai_model_land_example/modules/pages/home_page.dart';
+import 'package:ai_model_land_example/modules/home/page/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,9 +32,6 @@ class AppWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Modular.setInitialRoute(Routes.home.module);
     return MaterialApp.router(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       debugShowCheckedModeBanner: false,
       title: 'AI Model Land',
       routeInformationParser: Modular.routeInformationParser,
