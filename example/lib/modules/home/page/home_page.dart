@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'Device characteristic:',
+                    'Your device characteristic:',
                     style: Thems.textStyle,
                   ),
                   SizedBox(height: 5),
@@ -142,75 +142,6 @@ class _HomePageState extends State<HomePage> {
                     },
                     text: 'TensorFlowLite',
                   ),
-                  CustomButton(
-                    onPressed: () async {
-                      Modular.to.pushNamed('/home/onnx');
-                    },
-                    text: 'Onnx',
-                  ),
-
-                  // Text("Local models:"),
-                  // _modelsLocal == null
-                  //     ? Container()
-                  //     : FutureBuilder<List<BaseModel>>(
-                  //         key: ValueKey(_modelsLocal),
-                  //         future: _modelsLocal,
-                  //         builder: (BuildContext context,
-                  //             AsyncSnapshot<List<BaseModel>> snapshot) {
-                  //           if (snapshot.connectionState == ConnectionState.waiting) {
-                  //             return const CircularProgressIndicator();
-                  //           } else if (snapshot.hasError) {
-                  //             return SelectableText('Error: ${snapshot.error}');
-                  //           } else if (snapshot.hasData &&
-                  //               snapshot.data!.isNotEmpty) {
-                  //             return Column(
-                  //               children: snapshot.data!.map((basemodel) {
-                  //                 return ElevatedButton(
-                  //                   onPressed: () async {
-                  //                     final isDeleteModel = await Navigator.push(
-                  //                       context,
-                  //                       MaterialPageRoute(
-                  //                         builder: (context) =>
-                  //                             ModelPage(baseModel: basemodel),
-                  //                       ),
-                  //                     );
-                  //                     if (isDeleteModel == true) {
-                  //                       setState(() {
-                  //                         _modelsLocal = seeLocal();
-                  //                       });
-                  //                     }
-                  //                   },
-                  //                   child: Text(
-                  //                     '${basemodel.nameFile}.${basemodel.format.name}',
-                  //                     style: const TextStyle(
-                  //                         color: const Color.fromARGB(255, 0, 0, 0)),
-                  //                   ),
-                  //                   style: ElevatedButton.styleFrom(
-                  //                     side:
-                  //                         BorderSide(color: Colors.black, width: 0.5),
-                  //                     backgroundColor:
-                  //                         Color.fromARGB(255, 255, 255, 255),
-                  //                     shape: RoundedRectangleBorder(
-                  //                       borderRadius:
-                  //                           BorderRadius.zero, // No border radius
-                  //                     ),
-                  //                   ),
-                  //                 );
-                  //               }).toList(),
-                  //             );
-                  //           } else {
-                  //             return Text('No local models found');
-                  //           }
-                  //         },
-                  //       ),
-
-                  // SizedBox(height: 20),
-                  // CustomButton(
-                  //   onPressed: () async {
-                  //     Modular.to.navigate('/home/addModel');
-                  //   },
-                  //   text: 'Add Model',
-                  // ),
                 ],
               ),
             ),

@@ -18,9 +18,6 @@ class HomeModule extends Module {
   @override
   void routes(r) {
     r.child(Routes.home.page, child: (context) => HomePage());
-    // r.child(Routes.home.getRoute(Routes.home.addModel),
-    //     child: (context) => const AddModelPage());
     r.module(Routes.providers.tensorFlow, module: TensorFlowModule());
-    r.module(Routes.providers.onnx, module: OnnxModule());
   }
 }

@@ -2,7 +2,7 @@ import 'package:ai_model_land_example/modules/providers/tensor_flow/model_intera
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-class PhotoDetectionClassificationModule extends Module {
+class TFPhotoDetectionClassificationModule extends Module {
   @override
   void binds(i) {}
 
