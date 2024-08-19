@@ -200,7 +200,8 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
                       text: "Load Model"),
                   SizedBox(width: 10),
                   isLoad == null
-                      ? Text("Result: model not load")
+                      ? Text("Result: model not load",
+                          style: Thems.textStyle.copyWith(fontSize: 15))
                       : FutureBuilder(
                           future: isLoad,
                           builder: (BuildContext context,
@@ -211,9 +212,13 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
                             } else if (snapshot.hasError) {
                               return SelectableText('Error: ${snapshot.error}');
                             } else if (snapshot.data == true) {
-                              return Text("Result: model was loaded");
+                              return Text("Result: model was loaded",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             } else {
-                              return Text("Result: try add again");
+                              return Text("Result: try add again",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             }
                           },
                         ),
@@ -229,70 +234,87 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
                           ),
                         ],
                       )),
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: thresholdController,
-                          decoration: const InputDecoration(
-                              labelText: 'Input threshold(default 0.01)'),
-                        ),
-                        TextField(
-                          controller: textInputController,
-                          decoration:
-                              const InputDecoration(labelText: 'Input text'),
-                        ),
-                      ],
-                    ),
-                  ),
                   SizedBox(height: 10),
                   isModelLoaded == true
-                      ? CustomButton(
-                          onPressed: () {
-                            setState(() {
-                              outputPredict = _showRunModelDialog(
-                                  context: context,
-                                  threshold:
-                                      double.parse(thresholdController.text),
-                                  text: textInputController.text,
-                                  baseModel: baseModel);
-                            });
-                          },
-                          text: "Run model")
-                      : Container(),
-                  SizedBox(height: 5),
-                  outputPredict == null
-                      ? Text("Result: the model has not been started")
-                      : FutureBuilder(
-                          future: outputPredict,
-                          builder: (BuildContext context,
-                              AsyncSnapshot<TensorFlowResponseModel> snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const CircularProgressIndicator();
-                            } else if (snapshot.hasError) {
-                              return SelectableText('Error: ${snapshot.error}');
-                            } else if (snapshot.data != null &&
-                                snapshot.data!.predictForSingle != null) {
-                              List<Widget> predictions = snapshot
-                                  .data!.predictForSingle!
-                                  .map((predict) {
-                                return Text(
-                                  predict,
-                                  style: Thems.textStyle,
-                                );
-                              }).toList();
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 5),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: thresholdController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Input threshold(default 0.01)'),
+                              ),
+                              TextField(
+                                controller: textInputController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Input text'),
+                              ),
+                              SizedBox(height: 10),
+                              CustomButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      outputPredict = _showRunModelDialog(
+                                          context: context,
+                                          threshold: double.parse(
+                                              thresholdController.text),
+                                          text: textInputController.text,
+                                          baseModel: baseModel);
+                                    });
+                                  },
+                                  text: "Run model"),
+                              SizedBox(height: 5),
+                              outputPredict == null
+                                  ? Text(
+                                      "Result: the model has not been started",
+                                      style: Thems.textStyle
+                                          .copyWith(fontSize: 15))
+                                  : FutureBuilder(
+                                      future: outputPredict,
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<TensorFlowResponseModel>
+                                              snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const CircularProgressIndicator();
+                                        } else if (snapshot.hasError) {
+                                          return SelectableText(
+                                              'Error: ${snapshot.error}');
+                                        } else if (snapshot.data != null &&
+                                            snapshot.data!
+                                                    .predictForSingleLasbles !=
+                                                null) {
+                                          Map<String, double> predictions =
+                                              snapshot.data!
+                                                  .predictForSingleLasbles!;
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: predictions,
-                              );
-                            } else {
-                              return Text("Result: try run again");
-                            }
-                          },
+                                          List<Widget> predictsText =
+                                              predictions.entries.map((entris) {
+                                            return Text(
+                                              "${entris.key}: ${entris.value}",
+                                              style: Thems.textStyle,
+                                            );
+                                          }).toList();
+
+                                          return Column(
+                                            children: predictsText,
+                                          );
+                                        } else {
+                                          return Text("Result: try run again",
+                                              style: Thems.textStyle
+                                                  .copyWith(fontSize: 15));
+                                        }
+                                      },
+                                    ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          child: Text(
+                            "Load the model",
+                            style: Thems.textStyle,
+                          ),
                         ),
                   SizedBox(height: 10),
                   Text(
@@ -323,7 +345,12 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
                                 text: "Stop model"),
                           ],
                         )
-                      : Container(),
+                      : Container(
+                          child: Text(
+                            "Load the model",
+                            style: Thems.textStyle,
+                          ),
+                        ),
                   restartStop == null
                       ? Container()
                       : FutureBuilder(
@@ -336,9 +363,13 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
                             } else if (snapshot.hasError) {
                               return SelectableText('Error: ${snapshot.error}');
                             } else if (snapshot.data == true) {
-                              return const Text("Result: success");
+                              return Text("Result: success",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             } else {
-                              return Text("Result: try again");
+                              return Text("Result: try again",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             }
                           },
                         ),

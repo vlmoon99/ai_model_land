@@ -49,7 +49,10 @@ class _MainTensorflowPageState extends State<MainTensorflowPage> {
                   },
                   text: "Photo detection classification"),
               CustomButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Modular.to
+                        .pushNamed('/home/tensorFlow/video-object-detection');
+                  },
                   text: "Video object detection classification"),
             ],
           ),

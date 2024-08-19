@@ -211,7 +211,8 @@ class _TfPhotoDetectionClassificationState
                       text: "Load Model"),
                   SizedBox(width: 10),
                   isLoad == null
-                      ? Text("Result: model not load")
+                      ? Text("Result: model not load",
+                          style: Thems.textStyle.copyWith(fontSize: 15))
                       : FutureBuilder(
                           future: isLoad,
                           builder: (BuildContext context,
@@ -222,9 +223,13 @@ class _TfPhotoDetectionClassificationState
                             } else if (snapshot.hasError) {
                               return SelectableText('Error: ${snapshot.error}');
                             } else if (snapshot.data == true) {
-                              return Text("Result: model was loaded");
+                              return Text("Result: model was loaded",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             } else {
-                              return Text("Result: try add again");
+                              return Text("Result: try add again",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             }
                           },
                         ),
@@ -233,32 +238,107 @@ class _TfPhotoDetectionClassificationState
                     "The second step is to load the image, choose how accurately the predictor will be displayed and run the model",
                     style: Thems.textStyle,
                   ),
-                  TextField(
-                    controller: thresholdController,
-                    decoration: const InputDecoration(
-                        labelText: 'Input threshold(default 0.01)'),
-                  ),
                   SizedBox(height: 10),
-                  CustomButton(
-                      onPressed: () {
-                        pickFileIMG();
-                      },
-                      text: "Pick image"),
-                  CustomButton(
-                      onPressed: () {
-                        if (thresholdController.text.isNotEmpty &&
-                            inputObject != null) {
-                          setState(() {
-                            predict = _showRunModelDialog(
-                                context: context,
-                                threshold:
-                                    double.parse(thresholdController.text),
-                                image: inputObject!,
-                                baseModel: baseModel);
-                          });
-                        }
-                      },
-                      text: "Run model"),
+                  isModelLoaded != true
+                      ? Container(
+                          child: Text(
+                            "Load the model",
+                            style: Thems.textStyle,
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            TextField(
+                              controller: thresholdController,
+                              decoration: const InputDecoration(
+                                  labelText: 'Input threshold(default 0.01)'),
+                            ),
+                            SizedBox(height: 10),
+                            CustomButton(
+                                onPressed: () {
+                                  pickFileIMG();
+                                },
+                                text: "Pick image"),
+                            inputObject == null
+                                ? Text(
+                                    "Image not add",
+                                    style:
+                                        Thems.textStyle.copyWith(fontSize: 15),
+                                  )
+                                : Text("Image was add",
+                                    style:
+                                        Thems.textStyle.copyWith(fontSize: 15)),
+                            SizedBox(height: 10),
+                            inputObject == null
+                                ? Container(
+                                    child: Text(
+                                      "Load the image",
+                                      style: Thems.textStyle,
+                                    ),
+                                  )
+                                : CustomButton(
+                                    onPressed: () {
+                                      if (thresholdController.text.isNotEmpty &&
+                                          inputObject != null) {
+                                        setState(() {
+                                          predict = _showRunModelDialog(
+                                              context: context,
+                                              threshold: double.parse(
+                                                  thresholdController.text),
+                                              image: inputObject!,
+                                              baseModel: baseModel);
+                                        });
+                                      }
+                                    },
+                                    text: "Run model"),
+                            SizedBox(height: 10),
+                            predict == null
+                                ? Text("Result: the model has not been started",
+                                    style:
+                                        Thems.textStyle.copyWith(fontSize: 15))
+                                : FutureBuilder(
+                                    future: predict,
+                                    builder: (BuildContext context,
+                                        AsyncSnapshot<TensorFlowResponseModel>
+                                            snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const CircularProgressIndicator();
+                                      } else if (snapshot.hasError) {
+                                        return SelectableText(
+                                            'Error: ${snapshot.error}',
+                                            style: Thems.textStyle
+                                                .copyWith(fontSize: 15));
+                                      } else if (snapshot.data != null &&
+                                          snapshot.data!
+                                                  .predictForSingleLasbles !=
+                                              null) {
+                                        Map<String, double> predictions =
+                                            snapshot
+                                                .data!.predictForSingleLasbles!;
+
+                                        List<Widget> predictsText =
+                                            predictions.entries.map((entris) {
+                                          return Text(
+                                            "${entris.key}: ${entris.value.toStringAsFixed(4)}",
+                                            style: Thems.textStyle,
+                                            softWrap: true,
+                                            maxLines: null,
+                                          );
+                                        }).toList();
+
+                                        return Column(
+                                          children: predictsText,
+                                        );
+                                      } else {
+                                        return Text("Result: try run again",
+                                            style: Thems.textStyle
+                                                .copyWith(fontSize: 15));
+                                      }
+                                    },
+                                  ),
+                          ],
+                        ),
                   SizedBox(height: 10),
                   Text(
                     "Also we can stop or restart model if this needs",
@@ -288,7 +368,12 @@ class _TfPhotoDetectionClassificationState
                                 text: "Stop model"),
                           ],
                         )
-                      : Container(),
+                      : Container(
+                          child: Text(
+                            "Load the model",
+                            style: Thems.textStyle,
+                          ),
+                        ),
                   restartStop == null
                       ? Container()
                       : FutureBuilder(
@@ -301,9 +386,13 @@ class _TfPhotoDetectionClassificationState
                             } else if (snapshot.hasError) {
                               return SelectableText('Error: ${snapshot.error}');
                             } else if (snapshot.data == true) {
-                              return const Text("Result: success");
+                              return Text("Result: success",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             } else {
-                              return Text("Result: try again");
+                              return Text("Result: try again",
+                                  style:
+                                      Thems.textStyle.copyWith(fontSize: 15));
                             }
                           },
                         ),

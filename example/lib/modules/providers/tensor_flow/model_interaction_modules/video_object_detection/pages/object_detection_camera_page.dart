@@ -6,9 +6,11 @@ import 'package:ai_model_land_example/modules/models/recognition.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/box_widget.dart';
 import 'package:ai_model_land_example/modules/models/screen_params.dart';
+import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/stats.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -140,19 +142,16 @@ class _ObjectDetectionState extends State<ObjectDetection>
   }
 
   void loadLabels() async {
-    File labelsFile = File(widget.labels);
-    if (await labelsFile.exists()) {
-      final List<String> labelList =
-          await convertFileToList(labels: labelsFile);
-      setState(() {
-        _labels = labelList;
-      });
-    }
+    final lablesData = await rootBundle.loadString(widget.labels);
+
+    final List<String> labelList = convertFileToList(labels: lablesData);
+    setState(() {
+      _labels = labelList;
+    });
   }
 
-  Future<List<String>> convertFileToList({required File labels}) async {
-    String fileContent = await labels.readAsString();
-    List<String> lines = fileContent
+  List<String> convertFileToList({required String labels}) {
+    List<String> lines = labels
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
@@ -220,18 +219,21 @@ class _ObjectDetectionState extends State<ObjectDetection>
     }
     var aspect = 1 / _controller!.value.aspectRatio;
 
-    return Stack(
-      children: [
-        AspectRatio(
-          aspectRatio: aspect,
-          child: CameraPreview(_controller!),
-        ),
-        _statsWidget(),
-        AspectRatio(
-          aspectRatio: aspect,
-          child: _boundingBoxes(),
-        ),
-      ],
+    return Scaffold(
+      appBar: CustomAppBar(text: "Live Camera"),
+      body: Stack(
+        children: [
+          AspectRatio(
+            aspectRatio: aspect,
+            child: CameraPreview(_controller!),
+          ),
+          _statsWidget(),
+          AspectRatio(
+            aspectRatio: aspect,
+            child: _boundingBoxes(),
+          ),
+        ],
+      ),
     );
   }
 
