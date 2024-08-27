@@ -3,6 +3,7 @@ import 'package:ai_model_land_example/modules/app_module.dart';
 import 'package:ai_model_land_example/modules/home/page/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -31,6 +32,12 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Modular.setInitialRoute(Routes.home.module);
+    ScreenUtil.init(context);
+    ScreenUtil.configure(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+    );
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'AI Model Land',

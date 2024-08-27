@@ -30,7 +30,8 @@ class BaseModel {
 }
 
 enum ModelFormat {
-  tflite; // future implement  tfjs, pytorch, onnx, transformerjs
+  tflite,
+  onnx; // future implement  tfjs, pytorch, onnx, transformerjs
 
   @override
   String toString() {

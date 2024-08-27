@@ -1,5 +1,7 @@
 import 'package:ai_model_land/ai_model_land_lib.dart';
 import 'package:ai_model_land/models/core/base_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
+import 'package:ai_model_land/models/core/task_response_model.dart';
 import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -28,8 +30,7 @@ class GlobalVM {
   }
 
   Future<bool> loadModel(
-      {required TensorFlowRequestModel request,
-      required BaseModel baseModel}) async {
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     return await _aiModelLand.loadModel(request: request, baseModel: baseModel);
   }
 
@@ -47,16 +48,14 @@ class GlobalVM {
     return _aiModelLand.isModelLoaded(baseModel: baseModel);
   }
 
-  Future<TensorFlowResponseModel> runTaskOnTheModel(
-      {required TensorFlowRequestModel request,
-      required BaseModel baseModel}) async {
+  Future<TaskResponseModel> runTaskOnTheModel(
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     return await _aiModelLand.runTaskOnTheModel(
-        request: request, baseModel: baseModel) as TensorFlowResponseModel;
+        request: request, baseModel: baseModel);
   }
 
   Future<void> restartModel(
-      {required TensorFlowRequestModel request,
-      required BaseModel baseModel}) async {
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
     await _aiModelLand.restartModel(baseModel: baseModel, request: request);
   }
 }

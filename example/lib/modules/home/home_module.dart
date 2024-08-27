@@ -19,5 +19,6 @@ class HomeModule extends Module {
   void routes(r) {
     r.child(Routes.home.page, child: (context) => HomePage());
     r.module(Routes.providers.tensorFlow, module: TensorFlowModule());
+    r.module(Routes.providers.onnx, module: OnnxModule());
   }
 }

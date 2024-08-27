@@ -51,7 +51,7 @@ class _ObjectDetectionState extends State<ObjectDetection>
       required bool async}) async {
     final TensorFlowResponseModel output = await _aiModelLand.runTaskOnTheModel(
         request: TensorFlowRequestModel(dataMulti: [inputObject], async: async),
-        baseModel: baseModel);
+        baseModel: baseModel) as TensorFlowResponseModel;
     return output.predictForMulti!.values.toList();
   }
 
@@ -184,8 +184,6 @@ class _ObjectDetectionState extends State<ObjectDetection>
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
-    List<String>? _labels;
-    List<Recognition>? results;
     _initializeCamera();
     loadLabels();
     super.initState();

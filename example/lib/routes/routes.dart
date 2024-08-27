@@ -6,8 +6,8 @@ class Routes {
 }
 
 class _Home extends RouteClass {
-  String module = '/home';
-  String page = "/";
+  String module = '/';
+  String page = "/home";
   // String addModel = '/addModel';
 }
 
@@ -19,13 +19,14 @@ class _Providers extends RouteClass {
 
 class _ProvidersInteractions extends RouteClass {
   String init = '/';
+  String test = "/test";
   String textClassification = '/text-detection';
   String photoDetectionClassification = "/photo-detection-classification";
   String videoObjectDetection = "/video-object-detection";
 }
 
 abstract class RouteClass {
-  String module = '/home';
+  String module = '/';
 
   String getRoute(String moduleRoute) => module + moduleRoute;
 

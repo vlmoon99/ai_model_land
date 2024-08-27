@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:ai_model_land/models/core/base_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_request_model.dart';
 import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_respons_model.dart';
 import 'package:ai_model_land_example/services/services.dart';
@@ -80,7 +81,7 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
             threshold: threshold),
         baseModel: baseModel);
 
-    return output;
+    return output as TensorFlowResponseModel;
   }
 
   Future<TensorFlowResponseModel> _showRunModelDialog(
