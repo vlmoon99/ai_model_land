@@ -14,13 +14,15 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
   flutter_secure_storage: ^9.0.0
-  tflite_flutter: ^0.10.4
+  tflite_flutter:
+    path: tflite_flutter
   flutter_inappwebview: ^6.0.0
   dio: ^5.4.0
+  win32: ^5.5.3
+  onnxruntime: ^1.4.1
   dio_smart_retry: ^6.0.0
   collection: ^1.17.2
   json_annotation: ^4.8.1
-  onnxruntime: ^1.4.1
   path_provider: ^2.0.0
   rxdart: ^0.27.7
   device_info_plus: ^10.1.0
@@ -31,6 +33,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   build_runner: ^2.1.7
+  ffigen: ^7.2.11
   json_serializable: ^6.6.2
 
 # For information on the generic Dart part of this file, see the

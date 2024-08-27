@@ -8,6 +8,6 @@ class AppModule extends Module {
 
   @override
   void routes(r) {
-    r.module(Routes.home.module, module: HomeModule());
+    r.module(Routes.home.getModule(), module: HomeModule());
   }
 }

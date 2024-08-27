@@ -1,7 +1,5 @@
 import 'package:ai_model_land/ai_model_land.dart';
 import 'package:ai_model_land/models/core/base_model.dart';
-import 'package:ai_model_land_example/modules/pages/add_model_page.dart';
-import 'package:ai_model_land_example/modules/providers/tensor_flow/model_interaction_modules/modal_page.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
@@ -69,38 +67,44 @@ class _HomePageState extends State<HomePage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Text(
-                    "Welcome to Ai Model Land!",
-                    style: TextStyle(
-                        fontFamily: Thems.textFontFamily,
-                        fontSize: 24,
-                        color: Color.fromARGB(255, 219, 85, 85)),
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      "Welcome to Ai Model Land!",
+                      style: TextStyle(
+                          fontFamily: Thems.textFontFamily,
+                          fontSize: 24,
+                          color: Color.fromARGB(255, 219, 85, 85)),
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Here you can work with any models and any providers that our library supports.",
-                        style: Thems.textStyle,
-                      ),
-                      Text(
-                        "Now days we support: ${ModelFormat.values.toString()}.",
-                        textAlign: TextAlign.start,
-                        style: Thems.textStyle,
-                      ),
-                      Text(
-                        "You can check our work right now, just choose the right provider!",
-                        textAlign: TextAlign.start,
-                        style: Thems.textStyle,
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Here you can work with any models and any providers that our library supports.",
+                          style: Thems.textStyle,
+                        ),
+                        Text(
+                          "Now days we support: ${ModelFormat.values.toString()}.",
+                          textAlign: TextAlign.start,
+                          style: Thems.textStyle,
+                        ),
+                        Text(
+                          "You can check our work right now, just choose the right provider!",
+                          textAlign: TextAlign.start,
+                          style: Thems.textStyle,
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 5),
+                  SizedBox(height: 10),
                   Text(
-                    'Your device characteristic:',
+                    'Device characteristic:',
                     style: Thems.textStyle,
                   ),
-                  SizedBox(height: 5),
+                  SizedBox(height: 10),
                   Text(
                     '$_platformVersion',
                     style: Thems.textStyle,
@@ -137,10 +141,17 @@ class _HomePageState extends State<HomePage> {
                         ),
                   SizedBox(height: 10),
                   CustomButton(
-                    onPressed: () async {
-                      Modular.to.pushNamed('/home/tensorFlow');
+                    onPressed: () {
+                      Modular.to.pushNamed('//home/tensorFlow');
                     },
                     text: 'TensorFlowLite',
+                  ),
+                  SizedBox(height: 10),
+                  CustomButton(
+                    onPressed: () {
+                      Modular.to.pushNamed('//home/onnx');
+                    },
+                    text: 'ONNX',
                   ),
                 ],
               ),

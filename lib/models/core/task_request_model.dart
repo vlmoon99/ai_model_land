@@ -8,4 +8,12 @@ abstract class TaskRequestModel {
   Object? data;
   String? labelsFile;
   List<Object>? dataMulti;
+  LoadModelWay? loadModelWay;
+}
+
+enum LoadModelWay {
+  fromAssets,
+  fromFile,
+  fromAddress,
+  fromBuffer;
 }

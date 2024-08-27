@@ -57,10 +57,3 @@ class TensorFlowRequestModel implements TaskRequestModel {
       this.dataMulti,
       this.labelsList});
 }
-
-enum LoadModelWay {
-  fromAssets,
-  fromFile,
-  fromAddress,
-  fromBuffer;
-}
