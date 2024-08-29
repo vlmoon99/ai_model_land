@@ -1,10 +1,9 @@
 import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
-import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
 
-class ONNX extends ProviderAiService {
+class ONNX implements ProviderAiService {
   // OrtSessionOptions? sessionOptions;
   // OrtSession? session;
   ONNX() {}

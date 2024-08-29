@@ -19,7 +19,6 @@ dependencies:
   flutter_inappwebview: ^6.0.0
   dio: ^5.4.0
   win32: ^5.5.3
-  onnxruntime: ^1.4.1
   dio_smart_retry: ^6.0.0
   collection: ^1.17.2
   json_annotation: ^4.8.1
