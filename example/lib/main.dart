@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:ai_model_land/services/lib_initialization_service.dart';
 import 'package:ai_model_land_example/modules/app_module.dart';
 import 'package:ai_model_land_example/modules/home/page/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
@@ -11,6 +12,7 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     //Catch Errors caught by Flutter
+    initFlutterChainLib();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       //TODO add catcher

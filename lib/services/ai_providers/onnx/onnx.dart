@@ -1,15 +1,24 @@
+import 'dart:convert';
+
 import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
+import 'package:ai_model_land/services/js_engines/interface/js_vm.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
+import 'package:ai_model_land/services/js_engines/interface/js_engine_stub.dart'
+    if (dart.library.io) 'package:ai_model_land/services/js_engines/implementation/webview_js_engine.dart'
+    if (dart.library.js) 'package:ai_model_land/services/js_engines/implementation/web_js_engine.dart';
 
 class ONNX implements ProviderAiService {
   // OrtSessionOptions? sessionOptions;
   // OrtSession? session;
-  ONNX() {}
+  JsVMService jsVMService;
+  ONNX({required this.jsVMService}) {}
 
   factory ONNX.defaultInstance() {
-    return ONNX();
+    return ONNX(
+      jsVMService: getJsVM(),
+    );
   }
 
   @override
@@ -101,5 +110,10 @@ class ONNX implements ProviderAiService {
   Future stopModel() {
     // TODO: implement stopModel
     throw UnimplementedError();
+  }
+
+  Future test() async {
+    final res = await jsVMService.callJS("""await window.onnx.test()""");
+    final data = jsonDecode(res);
   }
 }
