@@ -1,7 +1,6 @@
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
 import 'package:ai_model_land_example/thems/thems.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_modular/flutter_modular.dart';

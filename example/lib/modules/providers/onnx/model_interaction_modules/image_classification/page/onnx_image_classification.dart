@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
+import 'package:ai_model_land/services/ai_providers/onnx/onnx.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
@@ -40,6 +41,12 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
         baseModel: baseModel);
   }
 
+  final ONNX _onnx = ONNX.defaultInstance();
+
+  Future test() async {
+    await _onnx.test();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,8 +63,8 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                   Align(
                       alignment: Alignment.center,
                       child: CustomButton(
-                          onPressed: () {
-                            loadModel(baseModel: baseModel);
+                          onPressed: () async {
+                            await test();
                           },
                           text: "Load Model")),
                 ],
