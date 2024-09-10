@@ -29,6 +29,8 @@ class OnnxRequestModel implements TaskRequestModel {
 
   String? loadModelFilePath;
 
+  String? pathToAsset;
+
   int? pointerAddress;
 
   OnnxRequestModel(

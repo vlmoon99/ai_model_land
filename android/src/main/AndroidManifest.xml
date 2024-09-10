@@ -1,3 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.aimodelland.ai_model_land">
+  <application
+    android:usesCleartextTraffic="true" >
+</application>
 </manifest>

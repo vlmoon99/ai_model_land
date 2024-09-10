@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:ai_model_land/models/core/base_model.dart';
+import 'dart:developer';
 
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
@@ -33,17 +34,17 @@ class TensorFlowLiteIO implements TensorFlowLite {
     try {
       final tensorRequest = request as TensorFlowRequestModel;
       if (tensorRequest.loadModelWay != null) {
-        switch (tensorRequest.loadModelWay!) {
+        switch (tensorRequest.loadModelWay) {
           case LoadModelWay.fromFile:
             {
               final file = File(baseModel.source);
               if (await file.exists()) {
                 _interpreter = await Interpreter.fromFile(file);
                 _getInformationAndIsolate();
-                print('Interpreter from file was created successfully');
+                log('Interpreter from file was created successfully');
                 return true;
               } else {
-                print('File not exist');
+                log('File not exist');
                 return false;
               }
             }
@@ -51,7 +52,7 @@ class TensorFlowLiteIO implements TensorFlowLite {
             {
               _interpreter = await Interpreter.fromAsset(baseModel.source);
               _getInformationAndIsolate();
-              print('Interpreter from asset was created successfully');
+              log('Interpreter from asset was created successfully');
               return true;
             }
           case LoadModelWay.fromBuffer:
@@ -61,7 +62,7 @@ class TensorFlowLiteIO implements TensorFlowLite {
                 _getInformationAndIsolate();
                 return true;
               } else {
-                print('Not add uint8list for buffer');
+                log('Not add uint8list for buffer');
                 return false;
               }
             }
@@ -72,8 +73,13 @@ class TensorFlowLiteIO implements TensorFlowLite {
                 print('Interpreter from asset was created successfully');
                 return true;
               } else {
-                print('Not add address model for address');
+                log('Not add address model for address');
               }
+            }
+          default:
+            {
+              throw Exception(
+                  "${tensorRequest.loadModelWay} not support for this provider");
             }
         }
       } else {

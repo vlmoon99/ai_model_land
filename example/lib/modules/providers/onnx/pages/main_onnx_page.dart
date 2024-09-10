@@ -42,7 +42,7 @@ class _MainOnnxPageState extends State<MainOnnxPage> {
                       onPressed: () {
                         Modular.to.pushNamed("//home/onnx/test");
                       },
-                      text: "TEST")
+                      text: "Image Classification Model")
                 ],
               ),
             ))

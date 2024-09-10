@@ -42,7 +42,7 @@ class WebviewJsVMService implements JsVMService {
         _webViewMobileController = controller;
       },
       onConsoleMessage: (controller, consoleMessage) {
-        if (consoleMessage.message == 'AI Model Land  initialized') {
+        if (consoleMessage.message == 'AI Model Land initialized') {
           _readyCompleter.complete();
         }
       },
@@ -62,7 +62,7 @@ class WebviewJsVMService implements JsVMService {
   Future<dynamic> callJSAsync(String function) async {
     await _readyCompleter.future;
     final String functionBody = """
-      var output = $function;
+     var output = $function;
       await output;
       return output;
     """;
@@ -70,6 +70,7 @@ class WebviewJsVMService implements JsVMService {
       functionBody: functionBody,
       arguments: {},
     );
+    print(res);
     return Future.value(res?.value);
   }
 }

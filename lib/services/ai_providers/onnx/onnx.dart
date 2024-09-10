@@ -1,13 +1,18 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
+import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
 import 'package:ai_model_land/services/js_engines/interface/js_vm.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
 import 'package:ai_model_land/services/js_engines/interface/js_engine_stub.dart'
     if (dart.library.io) 'package:ai_model_land/services/js_engines/implementation/webview_js_engine.dart'
     if (dart.library.js) 'package:ai_model_land/services/js_engines/implementation/web_js_engine.dart';
+import 'package:flutter/services.dart';
 
 class ONNX implements ProviderAiService {
   // OrtSessionOptions? sessionOptions;
@@ -23,57 +28,77 @@ class ONNX implements ProviderAiService {
 
   @override
   Future<bool> addModel(
-      {required TaskRequestModel request, required BaseModel baseModel}) {
-    // final onnxRequest = request as OnnxRequestModel;
-    // try {
-    //   switch (onnxRequest.loadModelWay) {
-    //     case LoadModelWay.fromFile:
-    //       {
-    //         if (onnxRequest.loadModelFilePath == null) {
-    //           throw Exception(
-    //               "For add model you need indicate full file path to model");
-    //         }
-    //         sessionOptions = OrtSessionOptions();
-    //         File modelFile = File(onnxRequest.loadModelFilePath!);
-    //         session = OrtSession.fromFile(modelFile, sessionOptions!);
-    //       }
-    //     case LoadModelWay.fromBuffer:
-    //       {
-    //         if (onnxRequest.uint8list == null) {
-    //           throw Exception(
-    //               "For add model you need indicate convert model in uint8list");
-    //         }
-    //         // OrtEnv.instance.availableProviders().forEach((element) {
-    //         //   print('onnx provider=$element');
-    //         // });
-    //         // OrtEnv.instance.release();
-    //         // OrtEnv.version;
-    //         OrtEnv.instance.init();
-    //         sessionOptions = OrtSessionOptions()
-    //           ..setInterOpNumThreads(1)
-    //           ..setIntraOpNumThreads(1)
-    //           ..setSessionGraphOptimizationLevel(
-    //               GraphOptimizationLevel.ortEnableAll);
-    //         session =
-    //             OrtSession.fromBuffer(onnxRequest.uint8list!, sessionOptions!);
-    //         final runOptions = OrtRunOptions();
-    //       }
-    //     case LoadModelWay.fromAddress:
-    //       {
-    //         if (onnxRequest.pointerAddress == null) {
-    //           throw Exception(
-    //               "For add model you need indicate pointer address");
-    //         }
-    //         session = OrtSession.fromAddress(onnxRequest.pointerAddress!);
-    //       }
-    //     default:
-    //       throw Exception("This load model way doesn`t exist");
-    //   }
-    // } catch (e) {
-    //   throw Exception("Model not add: $e");
-    // }
-    // return Future.value(true);
-    throw UnimplementedError("No finish");
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    try {
+      final onnxRequest = request as OnnxRequestModel;
+      if (onnxRequest.loadModelWay != null) {
+        switch (onnxRequest.loadModelWay) {
+          case LoadModelWay.fromFile:
+            {
+              final file = File(baseModel.source);
+              if (await file.exists()) {
+                return await loadModelCreateSession(
+                    modelBuffer: file.readAsBytesSync());
+              } else {
+                throw Exception("File not exist");
+              }
+            }
+          case LoadModelWay.fromAssets:
+            {
+              var byteData = await rootBundle.load(baseModel.source);
+              Uint8List modelBuffer = byteData.buffer.asUint8List();
+              return await loadModelCreateSession(modelBuffer: modelBuffer);
+            }
+          case LoadModelWay.fromBuffer:
+            {
+              if (onnxRequest.uint8list != null) {
+                return await loadModelCreateSession(
+                    modelBuffer: onnxRequest.uint8list);
+              } else {
+                throw Exception("Buffer not found");
+              }
+            }
+          default:
+            {
+              throw Exception(
+                  "${onnxRequest.loadModelWay!.name} not support for this provider");
+            }
+        }
+      } else {
+        throw Exception("Load model way absent");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  Future<bool> loadModelCreateSession({required modelBuffer}) async {
+    final isLoad = await loadOnWeb(
+        byts: modelBuffer, callfunction: "window.onnx.receiveChunk");
+    if (isLoad == true) {
+      final session =
+          await jsVMService.callJSAsync("window.onnx.createSessionBuffer()");
+      final res = await jsonDecode(session);
+      return true;
+    } else {
+      throw Exception("Model not load on web");
+    }
+  }
+
+  Future<bool> loadOnWeb(
+      {required Uint8List byts, required String callfunction}) async {
+    int chunkSize = byts.length ~/ 50; // 1MB chunks
+    int offset = 0;
+
+    while (offset < byts.length) {
+      int end =
+          (offset + chunkSize < byts.length) ? offset + chunkSize : byts.length;
+      Uint8List chunk = byts.sublist(offset, end);
+      final res =
+          await jsVMService.callJS(callfunction + "(${chunk.toString()})");
+      offset += chunkSize;
+    }
+    return true;
   }
 
   @override
@@ -113,7 +138,12 @@ class ONNX implements ProviderAiService {
   }
 
   Future test() async {
-    final res = await jsVMService.callJS("""await window.onnx.test()""");
-    final data = jsonDecode(res);
+    try {
+      final res = await jsVMService.callJS("window.onnx.test()");
+      print(res);
+      final data = jsonDecode(res);
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
   }
 }
