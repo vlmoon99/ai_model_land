@@ -16,7 +16,7 @@ class WebJsVMService implements JsVMService {
   @override
   Future<dynamic> callJS(String function) async {
     final res = js.context.callMethod('eval', [function]);
-
+    print(res);
     return res;
   }
 
