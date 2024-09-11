@@ -180,23 +180,23 @@ class _ModelPageState extends State<ModelPage> {
     }
   }
 
-  Future<String?> pickFileIMG() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+  // Future<String?> pickFileIMG() async {
+  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
 
-    if (result != null) {
-      final listBity = await File(result.files.single.path!).readAsBytes();
-      img.Image image = img.decodeImage(listBity)!;
-      img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
-      final Uint8List last = preprocesingclass.imageToByteListFloat32(
-          resizedImage, 224, 127.5, 127.5);
-      setState(() {
-        imgByteList = last;
-        inputObject = last;
-      });
-    } else {
-      return null;
-    }
-  }
+  //   if (result != null) {
+  //     final listBity = await File(result.files.single.path!).readAsBytes();
+  //     img.Image image = img.decodeImage(listBity)!;
+  //     img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
+  //     final Uint8List last = preprocesingclass.imageToByteListFloat32(
+  //         resizedImage, 224, 127.5, 127.5);
+  //     setState(() {
+  //       imgByteList = last;
+  //       inputObject = last;
+  //     });
+  //   } else {
+  //     return null;
+  //   }
+  // }
 
   void resetAllInputs() {
     setState(() {
@@ -286,7 +286,7 @@ class _ModelPageState extends State<ModelPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: pickFileIMG,
+                  onPressed: () {}, //pickFileIMG,
                   child: Text('Variably: Pick File (IMG)'),
                 ),
                 SizedBox(width: 10),

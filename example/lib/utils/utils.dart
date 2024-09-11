@@ -60,19 +60,35 @@ class UtilsClass {
   }
 
   Uint8List imageToByteListFloat32(
-      img.Image image, int inputSize, double mean, double std) {
+      img.Image image, int inputSize, List<double> mean, List<double> std) {
     var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
     var buffer = Float32List.view(convertedBytes.buffer);
     int pixelIndex = 0;
     for (var i = 0; i < inputSize; i++) {
       for (var j = 0; j < inputSize; j++) {
         var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (pixel.r - mean) / std;
-        buffer[pixelIndex++] = (pixel.g - mean) / std;
-        buffer[pixelIndex++] = (pixel.b - mean) / std;
+        buffer[pixelIndex++] = (pixel.r - mean[0]) / std[0];
+        buffer[pixelIndex++] = (pixel.g - mean[1]) / std[1];
+        buffer[pixelIndex++] = (pixel.b - mean[2]) / std[2];
       }
     }
     return convertedBytes.buffer.asUint8List();
+  }
+
+  Float32List imageToByteListFloat32onnx(
+      img.Image image, int inputSize, List<double> mean, List<double> std) {
+    var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
+    var buffer = Float32List.view(convertedBytes.buffer);
+    int pixelIndex = 0;
+    for (var i = 0; i < inputSize; i++) {
+      for (var j = 0; j < inputSize; j++) {
+        var pixel = image.getPixel(j, i);
+        buffer[pixelIndex++] = (pixel.r - mean[0]) / std[0];
+        buffer[pixelIndex++] = (pixel.g - mean[1]) / std[1];
+        buffer[pixelIndex++] = (pixel.b - mean[2]) / std[2];
+      }
+    }
+    return convertedBytes;
   }
 
   static Float64List imageToFloatBuffer(
