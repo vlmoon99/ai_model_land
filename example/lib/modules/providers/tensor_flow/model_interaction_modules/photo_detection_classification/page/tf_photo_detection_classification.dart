@@ -97,7 +97,7 @@ class _TfPhotoDetectionClassificationState
       img.Image image = img.decodeImage(listBity)!;
       img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
       final Uint8List photoConvert = preprocesingclass.imageToByteListFloat32(
-          resizedImage, 224, 127.5, 127.5);
+          resizedImage, 224, [127.5, 127.5, 127.5], [127.5, 127.5, 127.5]);
       setState(() {
         inputObject = photoConvert;
       });
