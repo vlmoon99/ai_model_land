@@ -2,14 +2,17 @@ self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js
 ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
 ort.env.wasm.numThreads = 1;
 let session;
+let inputNames;
+let outputNames;
 self.onmessage = async function(e) {
   const { isRun } = e.data;
   if(isRun == false){
+    console.log("In worker");
   try {
     const { modelData } = e.data;
     session = await ort.InferenceSession.create(modelData);
-    const inputNames = session["handler"]["inputNames"];
-    const outputNames = session["handler"]["outputNames"];
+    inputNames = session["handler"]["inputNames"];
+    outputNames = session["handler"]["outputNames"];
     console.log('Create');
     self.postMessage({
       status: 'success',
@@ -25,11 +28,16 @@ self.onmessage = async function(e) {
 } else {
     try{
         const { input } = e.data;
-        const output = this.session.run({data: input});
+        let outputData = {};          
+        console.log(input);
+        const output = await session.run({data: new ort.Tensor('float32', input, [1, 3, 224, 224])});
         console.log('run');
+        for(var i = 0; i < outputNames.length; i++) {
+          outputData[outputNames[i]] = output[outputNames[i]]["cpuData"];
+        }
         self.postMessage({
             status: 'success',
-            output: output,
+            output: outputData,
         });
     } catch (e) {
         self.postMessage({

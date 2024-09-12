@@ -38,7 +38,7 @@ class ONNX implements ProviderAiService {
               final file = File(baseModel.source);
               if (await file.exists()) {
                 return await loadModelCreateSession(
-                    modelBuffer: file.readAsBytesSync(), isModel: true);
+                    modelBuffer: file.readAsBytesSync());
               } else {
                 throw Exception("File not exist");
               }
@@ -47,14 +47,13 @@ class ONNX implements ProviderAiService {
             {
               var byteData = await rootBundle.load(baseModel.source);
               Uint8List modelBuffer = byteData.buffer.asUint8List();
-              return await loadModelCreateSession(
-                  modelBuffer: modelBuffer, isModel: true);
+              return await loadModelCreateSession(modelBuffer: modelBuffer);
             }
           case LoadModelWay.fromBuffer:
             {
               if (onnxRequest.uint8list != null) {
                 return await loadModelCreateSession(
-                    modelBuffer: onnxRequest.uint8list, isModel: true);
+                    modelBuffer: onnxRequest.uint8list);
               } else {
                 throw Exception("Buffer not found");
               }
@@ -73,18 +72,16 @@ class ONNX implements ProviderAiService {
     }
   }
 
-  Future<bool> loadModelCreateSession(
-      {required modelBuffer, required bool isModel}) async {
-    final js = jsonEncode(modelBuffer);
+  Future<bool> loadModelCreateSession({required modelBuffer}) async {
     final isLoad = await loadOnWeb(
-        byts: modelBuffer,
-        callFunction: "window.onnx.receiveChunk",
-        isModel: isModel);
+        byts: modelBuffer, callFunction: "window.onnx.receiveChunk");
     if (isLoad == true) {
       final session =
           await jsVMService.callJSAsync("window.onnx.createSessionBuffer()");
-      final res = await jsonDecode(session);
-      // final test = await jsVMService.callJS("window.onnx.test()");
+      Map<String, dynamic> res = await jsonDecode(session);
+      if (res.containsKey("error")) {
+        throw Exception("Error: ${res["error"]}");
+      }
       return true;
     } else {
       throw Exception("Model not load on web");
@@ -92,9 +89,7 @@ class ONNX implements ProviderAiService {
   }
 
   Future<bool> loadOnWeb(
-      {required Uint8List byts,
-      required String callFunction,
-      required bool isModel}) async {
+      {required Uint8List byts, required String callFunction}) async {
     int chunkSize = byts.length ~/ 50; // 1MB chunks
     int offset = 0;
 
@@ -102,8 +97,8 @@ class ONNX implements ProviderAiService {
       int end =
           (offset + chunkSize < byts.length) ? offset + chunkSize : byts.length;
       Uint8List chunk = byts.sublist(offset, end);
-      final res = await jsVMService
-          .callJS(callFunction + "(${chunk.toString()}, $isModel)");
+      final res =
+          await jsVMService.callJS(callFunction + "(${chunk.toString()})");
       offset += chunkSize;
     }
     return true;
@@ -135,16 +130,23 @@ class ONNX implements ProviderAiService {
   @override
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) async {
     final onnxRequest = request as OnnxRequestModel;
-    try {
-      final json = jsonEncode(onnxRequest.data);
-      final res = await jsVMService.callJS("window.onnx.runModel('$json')");
-    } catch (e) {
-      throw Exception("Error: $e");
+    if (onnxRequest.data != null) {
+      try {
+        final json = jsonEncode(onnxRequest.data);
+        final data =
+            await jsVMService.callJSAsync("window.onnx.runModel('$json')");
+        final predict = await jsonDecode("$data");
+        log(predict);
+      } catch (e) {
+        throw Exception("Error: $e");
+      }
+      // final isLoad = await loadOnWeb(
+      //     byts: jsonEncode(onnxRequest.data),
+      //     callFunction: "window.onnx.receiveChunk",
+      //     isModel: isModel);
+    } else {
+      throw Exception("Input data not load");
     }
-    // final isLoad = await loadOnWeb(
-    //     byts: jsonEncode(onnxRequest.data),
-    //     callFunction: "window.onnx.receiveChunk",
-    //     isModel: isModel);
     throw UnimplementedError();
   }
 
@@ -156,7 +158,7 @@ class ONNX implements ProviderAiService {
 
   Future test() async {
     try {
-      final res = await jsVMService.callJS("window.onnx.test()");
+      final res = await jsVMService.callJSAsync("window.onnx.test()");
       print(res);
       final data = jsonDecode(res);
     } catch (e) {
