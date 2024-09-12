@@ -10,27 +10,21 @@ export class Onnx {
     input;
     worker;
     
-    receiveChunk(chunk, isModel) {
-      if (isModel == true){
+    receiveChunk(chunk) {
         this.modelBuffer.push(chunk);
         console.log('Received chunk of size model:', chunk.length);
-      } else if (isModel == false){
-        this.inputBuffer.push(chunk);
-        console.log('Received chunk of size input data:', chunk.length);
-      } else {
-        console.error("Incorrect isModel data");
-      }
     }
 
-    async load() {
+    async loadWorkerModel(mergedArray) {
+      if (this.worker != null) {
+        throw new Error("Worker work already");
+      } else {
       try {
        this.worker = new Worker("./onnx-worker.js");
-        const response = await fetch('../testModel/mobilenetv2-7.onnx');
-        const arrayBuffer = await response.arrayBuffer();
         return await new Promise((resolve, reject) => {
           this.worker.postMessage({
               isRun: false,
-              modelData: arrayBuffer
+              modelData: mergedArray
             });
     
 
@@ -44,7 +38,7 @@ export class Onnx {
               resolve({ res: JSON.stringify({inputNames, outputNames})});
             } else if (status === 'error') {
               console.error('Error creating ONNX Session:', message);
-              reject(new Error(message));
+              reject(new Error('Error creating ONNX Session:' + message));
             }
           };
     
@@ -55,23 +49,22 @@ export class Onnx {
           };
         });
       } catch (e) {
-        console.error(`Error in start ONNX Worker: ${e.message}`);
-        throw e;
+        console.error(`Error in load ONNX Worker: ${e.message}`);
+        throw new Error(`Error in load ONNX Worker: ${e.message}`);
       }
+    }
   }
 
-  async run(datajson) {
+  async runModel(datajson) {
      if (this.worker == null){
-      console.log("Worker and session wasn`t create");
+      throw new Error("Worker and session wasn`t create");
      } else {
       try {
       return await new Promise((resolve, reject) => {
           const input = new Float32Array(JSON.parse(datajson));
-          console.log(input);
-          const inputTensor = new onnxruntime.Tensor('float32', input, [1, 3, 224, 224]);
           this.worker.postMessage({
             isRun: true,
-            input: inputTensor
+            input: input
           });
   
 
@@ -82,10 +75,10 @@ export class Onnx {
             console.log('ONNX run model');
 
             
-            resolve({ output: JSON.stringify({output})});
+            resolve(JSON.stringify({output}));
           } else if (status === 'error') {
-            console.error('Error creating ONNX Session:', message);
-            reject(new Error(message));
+            console.error('Error run ONNX model:', message);
+            reject(new Error('Error run ONNX model:', message));
           }
         };
   
@@ -96,8 +89,8 @@ export class Onnx {
         };
       });
     } catch (e) {
-      console.error(`Error in start ONNX Worker: ${e.message}`);
-      throw e;
+      console.error(`Error in run ONNX Worker: ${e.message}`);
+      return JSON.stringify({error: new Error(`Error in run ONNX Worker: ${e.message}`)});
     }
   }
 }
@@ -105,15 +98,6 @@ export class Onnx {
     async createSessionPath(){
         try{ 
             this.ortSession = await onnxruntime.InferenceSession.create("../testModel/mobilenetv2-7.onnx"); //"../testModel/model.onnx"
-            //   let loadModel = await ortSession.handler.loadModel(); 
-            // const inputNames = ortSession.inputNames;
-            // const outputNames = ortSession.outputNames;
-            // const feeds = {
-            //     a: new onnxruntime.Tensor('float32', Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), [3, 4]),
-            //     b: new onnxruntime.Tensor('float32', Float32Array.from([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]), [4, 3])
-            // };
-            // const result = await  ortSession.run(feeds);
-            // return  {ortsesion: ortSession, onnxruntime: onnxruntime, result: result};
             return this.ortSession;
         }catch(e){
             return `Error: ${e}`;
@@ -122,6 +106,7 @@ export class Onnx {
 
 
     async createSessionBuffer(){
+      if(this.modelBuffer.length != 0){
         try{
             let totalLength = this.modelBuffer.reduce((acc, val) => acc + val.length, 0);
             let mergedArray = new Uint8Array(totalLength);
@@ -135,108 +120,29 @@ export class Onnx {
             this.modelBuffer = [];
             totalLength = null;
             offset = null;
-            var res = await this.startOnnxWorker(mergedArray);
+            var res = await this.loadWorkerModel(mergedArray);
             mergedArray = null;
-            this.ortSession = res.session;
             return res.res;
         }catch(e){
-            return `Error: ${e}`;
-        }
-    }
-
-
-    async createSessionArrayBuffer(arrayBuffer, offset, length){
-        try{
-            let ortSession = await onnxruntime.InferenceSession.create(arrayBuffer, offset, length);
-            //   let loadModel = await ortSession.handler.loadModel(); 
-            return  {ortsesion: ortSession, onnxruntime: onnxruntime};
-        }catch(e){
-            return `Error: ${e}`;
-        }
-    }
-
-    async startOnnxWorker(buffer) {
-          try {
-            const workerCode = `
-              self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js');
-              ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
-      
-              self.onmessage = async function(e) {
-                const { modelData } = e.data;
-                try {
-                  const session = await ort.InferenceSession.create(modelData);
-                  const inputNames = session["handler"]["inputNames"];
-                  const outputNames = session["handler"]["outputNames"];
-                  
-                 
-                  self.postMessage({
-                    status: 'success',
-                    inputNames: inputNames,
-                    outputNames: outputNames,
-                    session: session
-                  });
-                } catch (error) {
-                  self.postMessage({
-                    status: 'error',
-                    message: error.toString()
-                  });
-                }
-              };
-            `;
-          
-            const blob = new Blob([workerCode], { type: 'application/javascript' });
-            const worker = new Worker(URL.createObjectURL(blob));
-            return await new Promise((resolve, reject) => {
-              worker.postMessage({
-                  modelData: buffer
-                });
-        
-
-              worker.onmessage = function(e) {
-                const { status, inputNames, outputNames, session, message } = e.data;
-        
-                if (status === 'success') {
-                  console.log('ONNX Session created successfully');
-                  console.log('Input Names:', inputNames);
-                  console.log('Output Names:', outputNames);
-                  resolve({ res: JSON.stringify({inputNames, outputNames}), session: session});
-                } else if (status === 'error') {
-                  console.error('Error creating ONNX Session:', message);
-                  reject(new Error(message));
-                }
-                worker.terminate();
-              };
-        
-      
-              worker.onerror = function(error) {
-                console.error('Error in worker:', error.message);
-                reject(error);
-                worker.terminate();
-              };
-            });
-          } catch (e) {
-            console.error(`Error in start ONNX Worker: ${e.message}`);
-            throw e;
-          }
-      }
-
-
-      async runModel(datajson){
-        if(this.ortSession != null){
-        try {
-          const input = new Float32Array(JSON.parse(datajson));
-          console.log(input);
-          const inputTensor = new onnxruntime.Tensor('float32', input, [1, 3, 224, 224]);
-          console.log("Run session");
-          return JSON.stringify({result: output});
-        } catch (e) {
-          console.error("Error:", e);
+            return JSON.stringify({error: `${e}`});
         }
       } else {
-        console.error("Session not create");
+        console.error("Model not loaded");
+        return JSON.stringify({error: "Model not loaded"});
       }
-      }
+    }
+
+    async stopModel(){}
       
+
+    async test(){
+      const response = await fetch('./onnx-worker.js');
+      if (response.status == 200){
+        console.log("exist");
+      } else {
+        console.error("not exist");
+      }
+    }
 
 };
 
