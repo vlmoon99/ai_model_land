@@ -50,12 +50,17 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
 
   Future runModel({required Float32List inputBytes}) async {
     return await _aiModelLand.runTaskOnTheModel(
-        request: OnnxRequestModel(data: inputBytes), baseModel: baseModel);
+        request: OnnxRequestModel(
+            dataMulti: inputBytes,
+            shape: [
+              [1, 3, 224, 224]
+            ],
+            threshold: 4),
+        baseModel: baseModel);
   }
 
   Future<String?> pickFileIMG() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
-
     if (result != null) {
       if (kIsWeb == true) {
         final bytes = result.files.first.bytes;

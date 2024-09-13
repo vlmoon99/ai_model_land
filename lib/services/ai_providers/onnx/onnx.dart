@@ -17,6 +17,8 @@ import 'package:flutter/services.dart';
 class ONNX implements ProviderAiService {
   // OrtSessionOptions? sessionOptions;
   // OrtSession? session;
+  List<dynamic>? inputNames;
+  List<dynamic>? outputNames;
   JsVMService jsVMService;
   ONNX({required this.jsVMService}) {}
 
@@ -82,6 +84,8 @@ class ONNX implements ProviderAiService {
       if (res.containsKey("error")) {
         throw Exception("Error: ${res["error"]}");
       }
+      inputNames = res["inputNames"];
+      outputNames = res["outputNames"];
       return true;
     } else {
       throw Exception("Model not load on web");
@@ -130,22 +134,47 @@ class ONNX implements ProviderAiService {
   @override
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) async {
     final onnxRequest = request as OnnxRequestModel;
-    if (onnxRequest.data != null) {
+    if (inputNames!.length == 0) {
+      throw Exception("Input names data can`t be 0");
+    }
+    if (onnxRequest.dataMulti != null && onnxRequest.shape != null) {
+      if (onnxRequest.dataMulti!.length != onnxRequest.shape!.length) {
+        throw Exception('Length dataMulti and shape must be the same');
+      }
+
+      if (onnxRequest.dataMulti!.length != inputNames!.length) {
+        throw Exception("Data length and input names length must be the same");
+      }
       try {
-        final json = jsonEncode(onnxRequest.data);
-        final data =
-            await jsVMService.callJSAsync("window.onnx.runModel('$json')");
-        final predict = await jsonDecode("$data");
-        log(predict);
+        var data;
+        var inputData = [];
+        var typeInputdata = [];
+        if (onnxRequest.typeInputData == null) {
+          for (var inputObject in onnxRequest.dataMulti!) {
+            typeInputdata.add(inputObject.runtimeType.toString());
+            inputData.add(jsonEncode(inputObject));
+          }
+        } else {
+          for (var inputObject in onnxRequest.dataMulti!) {
+            inputData.add(jsonEncode(inputObject));
+          }
+          typeInputdata = onnxRequest.typeInputData!;
+        }
+        data = await jsVMService.callJSAsync(
+            "window.onnx.runModel($inputData, ${onnxRequest.shape}, $typeInputdata,${onnxRequest.threshold})");
+        final dataOutput = await jsonDecode(data);
+        Map<String, dynamic> sortedData = {};
+        for (var oneOutput in outputNames!) {
+          var sortedEntries = dataOutput["output"][oneOutput].entries.toList()
+            ..sort((a, b) => (b.value as double).compareTo(a.value as double));
+          sortedData.addEntries(sortedEntries);
+        }
+        log('fds');
       } catch (e) {
         throw Exception("Error: $e");
       }
-      // final isLoad = await loadOnWeb(
-      //     byts: jsonEncode(onnxRequest.data),
-      //     callFunction: "window.onnx.receiveChunk",
-      //     isModel: isModel);
     } else {
-      throw Exception("Input data not load");
+      throw Exception("Input data not load or shape not found");
     }
     throw UnimplementedError();
   }

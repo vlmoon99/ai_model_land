@@ -33,6 +33,12 @@ class OnnxRequestModel implements TaskRequestModel {
 
   int? pointerAddress;
 
+  double? threshold;
+
+  List<List<int>>? shape;
+
+  List<String>? typeInputData;
+
   OnnxRequestModel(
       {this.data,
       this.dataMulti,
@@ -43,5 +49,9 @@ class OnnxRequestModel implements TaskRequestModel {
       this.uint64list,
       this.uint8list,
       this.loadModelFilePath,
-      this.pointerAddress});
+      this.pointerAddress,
+      this.threshold,
+      this.pathToAsset,
+      this.shape,
+      this.typeInputData});
 }
