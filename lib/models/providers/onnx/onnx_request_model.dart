@@ -39,6 +39,8 @@ class OnnxRequestModel implements TaskRequestModel {
 
   List<String>? typeInputData;
 
+  int? numThreads;
+
   OnnxRequestModel(
       {this.data,
       this.dataMulti,
@@ -53,5 +55,6 @@ class OnnxRequestModel implements TaskRequestModel {
       this.threshold,
       this.pathToAsset,
       this.shape,
-      this.typeInputData});
+      this.typeInputData,
+      this.numThreads});
 }

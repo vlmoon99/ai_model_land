@@ -12,7 +12,6 @@ import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image/image.dart' as img;
 
@@ -37,25 +36,18 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
       sourceType: ModelSourceType.local);
 
   Future<bool> loadModel() async {
-    // ByteData byteData = await rootBundle.load(baseModel.source);
-    // Uint8List modelBuffer = byteData.buffer.asUint8List();
-    // if (bytes != null) {
     return await _aiModelLand.loadModel(
         request: OnnxRequestModel(loadModelWay: LoadModelWay.fromAssets),
         baseModel: baseModel);
-    // } else {
-    //   return false;
-    // }
   }
 
   Future runModel({required Float32List inputBytes}) async {
     return await _aiModelLand.runTaskOnTheModel(
-        request: OnnxRequestModel(
-            dataMulti: inputBytes,
-            shape: [
-              [1, 3, 224, 224]
-            ],
-            threshold: 4),
+        request: OnnxRequestModel(dataMulti: [
+          inputBytes
+        ], shape: [
+          [1, 3, 224, 224]
+        ], threshold: 4),
         baseModel: baseModel);
   }
 
@@ -63,20 +55,19 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
       if (kIsWeb == true) {
-        final bytes = result.files.first.bytes;
-        if (bytes != null && bytes.isNotEmpty) {
-          img.Image image = img.decodeImage(bytes)!;
-          img.Image resizedImage =
-              img.copyResize(image, width: 224, height: 224);
-          final Float32List photoConvert = preprocesingclass
-              .imageToByteListFloat32onnx(resizedImage, 224,
-                  [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]);
-          setState(() {
-            inputBytes = photoConvert;
-          });
-        } else {
-          throw Exception("Bytes file not exist");
-        }
+        // final bytes = result.files.first.bytes;
+        // if (bytes != null && bytes.isNotEmpty) {
+        //   img.Image image = img.decodeImage(bytes)!;
+        //   img.Image resizedImage =
+        //       img.copyResize(image, width: 224, height: 224);
+        //   final Float32List photoConvert = preprocesingclass
+        //       .imageDataToTensor(resizedImage.getBytes(), [1, 3, 224, 224]);
+        //   setState(() {
+        //     inputBytes = photoConvert;
+        //   });
+        // } else {
+        //   throw Exception("Bytes file not exist");
+        // }
       } else {
         final file = File(result.files.single.path!);
         if (await file.exists()) {
@@ -85,8 +76,9 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
           img.Image resizedImage =
               img.copyResize(image, width: 224, height: 224);
           final Float32List photoConvert = preprocesingclass
-              .imageToByteListFloat32onnx(resizedImage, 224,
-                  [127.5, 127.5, 127.5], [127.5, 127.5, 127.5]);
+              .imageDataToTensor(resizedImage, [1, 3, 224, 224]);
+          //               final Float32List photoConvert = preprocesingclass.imageDataToTensor(
+          // resizedImage.buffer.asUint8List(), [1, 3, 224, 224]);
           setState(() {
             inputBytes = photoConvert;
           });
@@ -97,6 +89,30 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
     } else {
       return null;
     }
+  }
+
+  Future<bool> stopModel() async {
+    await _aiModelLand.stopModel(baseModel: baseModel);
+    return true;
+  }
+
+  Future<bool> restartModel() async {
+    await _aiModelLand.restartModel(
+        request: OnnxRequestModel(), baseModel: baseModel);
+    return true;
+  }
+
+  void checkModelLoadedStop({required BaseModel baseModel}) async {
+    final modelUpload = await _aiModelLand.isModelLoaded(baseModel: baseModel);
+    if (modelUpload) {
+      stopModel();
+    }
+  }
+
+  @override
+  void dispose() {
+    checkModelLoadedStop(baseModel: baseModel);
+    super.dispose();
   }
 
   @override
@@ -122,7 +138,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                         children: [
                           ElevatedButton(
                             onPressed: pickFileIMG,
-                            child: Text('Pick model File'),
+                            child: Text('Pick image File'),
                           ),
                           CustomButton(
                               onPressed: () async {
@@ -135,7 +151,15 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                                   runModel(inputBytes: inputBytes!);
                                 }
                               },
-                              child: Text("Run model"))
+                              child: Text("Run model")),
+                          ElevatedButton(
+                            onPressed: stopModel,
+                            child: Text('Stop Model'),
+                          ),
+                          ElevatedButton(
+                            onPressed: restartModel,
+                            child: Text('Restart Model'),
+                          ),
                         ],
                       )),
                   SelectableText("${sourceController.text}"),
