@@ -65,8 +65,8 @@ class AiModelLandLib {
         request: request, baseModel: baseModel);
   }
 
-  bool isModelLoaded({required BaseModel baseModel}) {
-    return aiService.isModelLoaded(baseModel: baseModel);
+  Future<bool> isModelLoaded({required BaseModel baseModel}) async {
+    return await aiService.isModelLoaded(baseModel: baseModel);
   }
 
   Future<void> deleteModel(

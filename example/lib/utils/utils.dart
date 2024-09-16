@@ -83,13 +83,70 @@ class UtilsClass {
     for (var i = 0; i < inputSize; i++) {
       for (var j = 0; j < inputSize; j++) {
         var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (pixel.r - mean[0]) / std[0];
-        buffer[pixelIndex++] = (pixel.g - mean[1]) / std[1];
-        buffer[pixelIndex++] = (pixel.b - mean[2]) / std[2];
+        buffer[pixelIndex++] = (pixel.r / 255.0 - mean[0]) / std[0];
+        buffer[pixelIndex++] = (pixel.g / 255.0 - mean[1]) / std[1];
+        buffer[pixelIndex++] = (pixel.b / 255.0 - mean[2]) / std[2];
       }
     }
     return convertedBytes;
   }
+
+  Float32List imageDataToTensor(img.Image image, List<int> dims) {
+    // 1. Получение данных пикселей изображения
+    Uint8List imageBufferData = image.getBytes(); // Получение байт изображения
+
+    // 2. Создание массивов для R, G и B каналов
+    List<int> redArray = [];
+    List<int> greenArray = [];
+    List<int> blueArray = [];
+
+    // 3. Извлечение R, G и B каналов из данных изображения
+    for (int i = 0; i < imageBufferData.length; i += 4) {
+      redArray.add(imageBufferData[i]); // Красный канал
+      greenArray.add(imageBufferData[i + 1]); // Зелёный канал
+      blueArray.add(imageBufferData[i + 2]); // Синий канал
+      // Пропускаем imageBufferData[i + 3], игнорируем альфа-канал
+    }
+
+    // 4. Конкатенация RGB каналов и транспонирование [224, 224, 3] -> [3, 224, 224]
+    List<int> transposedData = redArray + greenArray + blueArray;
+
+    // 5. Преобразование данных в Float32List и нормализация
+    Float32List float32Data = Float32List(dims[1] * dims[2] * dims[3]);
+    for (int i = 0; i < transposedData.length; i++) {
+      float32Data[i] =
+          transposedData[i] / 255.0; // Нормализация в диапазон [0, 1]
+    }
+
+    // Возвращаем массив float32, который можно передать в модель
+    return float32Data;
+  }
+
+  // Float32List imageDataToTensor(Uint8List data, List<int> dims) {
+  //   List<int> R = [];
+  //   List<int> G = [];
+  //   List<int> B = [];
+
+  //   // Извлекаем значения RGB
+  //   for (var i = 0; i < data.length; i += 4) {
+  //     R.add(data[i]); // Красный канал
+  //     G.add(data[i + 1]); // Зелёный канал
+  //     B.add(data[i + 2]); // Синий канал
+  //     // Пропускаем альфа-канал (data[i + 3])
+  //   }
+
+  //   // Конкатенируем R, G и B, транспонируя изображение
+  //   List<int> transposedData = R + G + B;
+
+  //   // Преобразуем в Float32List и нормализуем
+  //   Float32List float32Data = Float32List(3 * 224 * 224);
+  //   for (var i = 0; i < transposedData.length; i++) {
+  //     float32Data[i] = transposedData[i] / 255.0; // Нормализация
+  //   }
+
+  //   // Возвращаем нормализованные данные
+  //   return float32Data;
+  // }
 
   static Float64List imageToFloatBuffer(
       Image image, List<double> mean, List<double> std,

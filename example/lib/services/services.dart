@@ -44,8 +44,8 @@ class GlobalVM {
     await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
-  bool isModelLoaded({required BaseModel baseModel}) {
-    return _aiModelLand.isModelLoaded(baseModel: baseModel);
+  Future<bool> isModelLoaded({required BaseModel baseModel}) async {
+    return await _aiModelLand.isModelLoaded(baseModel: baseModel);
   }
 
   Future<TaskResponseModel> runTaskOnTheModel(

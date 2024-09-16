@@ -21,5 +21,5 @@ abstract class ProviderAiService {
           {required TaskRequestModel request, required BaseModel baseModel}) =>
       throw UnsupportedError("No implementation");
 
-  bool isModelLoaded() => throw UnsupportedError("No implementation");
+  Future<bool> isModelLoaded() => throw UnsupportedError("No implementation");
 }

@@ -99,7 +99,7 @@ class AiService {
         .restartModel(request: request, baseModel: baseModel);
   }
 
-  bool isModelLoaded({required BaseModel baseModel}) {
-    return providerService[baseModel.format]!.isModelLoaded();
+  Future<bool> isModelLoaded({required BaseModel baseModel}) async {
+    return await providerService[baseModel.format]!.isModelLoaded();
   }
 }

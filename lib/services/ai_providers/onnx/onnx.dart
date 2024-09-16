@@ -40,22 +40,25 @@ class ONNX implements ProviderAiService {
               final file = File(baseModel.source);
               if (await file.exists()) {
                 return await loadModelCreateSession(
-                    modelBuffer: file.readAsBytesSync());
+                    modelBuffer: file.readAsBytesSync(),
+                    numThreads: onnxRequest.numThreads);
               } else {
                 throw Exception("File not exist");
               }
             }
           case LoadModelWay.fromAssets:
             {
-              var byteData = await rootBundle.load(baseModel.source);
+              final byteData = await rootBundle.load(baseModel.source);
               Uint8List modelBuffer = byteData.buffer.asUint8List();
-              return await loadModelCreateSession(modelBuffer: modelBuffer);
+              return await loadModelCreateSession(
+                  modelBuffer: modelBuffer, numThreads: onnxRequest.numThreads);
             }
           case LoadModelWay.fromBuffer:
             {
               if (onnxRequest.uint8list != null) {
                 return await loadModelCreateSession(
-                    modelBuffer: onnxRequest.uint8list);
+                    modelBuffer: onnxRequest.uint8list,
+                    numThreads: onnxRequest.numThreads);
               } else {
                 throw Exception("Buffer not found");
               }
@@ -74,12 +77,14 @@ class ONNX implements ProviderAiService {
     }
   }
 
-  Future<bool> loadModelCreateSession({required modelBuffer}) async {
+  Future<bool> loadModelCreateSession(
+      {required modelBuffer, int? numThreads}) async {
+    //numThreads recommend 1(by default 1)
     final isLoad = await loadOnWeb(
         byts: modelBuffer, callFunction: "window.onnx.receiveChunk");
     if (isLoad == true) {
-      final session =
-          await jsVMService.callJSAsync("window.onnx.createSessionBuffer()");
+      final session = await jsVMService
+          .callJSAsync("window.onnx.createSessionBuffer($numThreads)");
       Map<String, dynamic> res = await jsonDecode(session);
       if (res.containsKey("error")) {
         throw Exception("Error: ${res["error"]}");
@@ -120,15 +125,27 @@ class ONNX implements ProviderAiService {
   }
 
   @override
-  bool isModelLoaded() {
-    // TODO: implement isModelLoaded
-    throw UnimplementedError();
+  Future<bool> isModelLoaded() async {
+    final isload = await jsVMService.callJS("window.onnx.isModelLoaded()");
+    Map<String, dynamic> res = jsonDecode(isload);
+    return res["res"];
   }
 
   @override
   Future restartModel(
-      {required TaskRequestModel request, required BaseModel baseModel}) {
-    throw UnimplementedError();
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    try {
+      final restartResponse =
+          await jsVMService.callJSAsync("window.onnx.restartModel()");
+      Map<String, dynamic> res = jsonDecode(restartResponse);
+
+      if (res.containsKey("error")) {
+        throw Exception("${res["error"]}");
+      }
+      log('Model restart successful');
+    } catch (e) {
+      throw Exception("$e");
+    }
   }
 
   @override
@@ -146,22 +163,23 @@ class ONNX implements ProviderAiService {
         throw Exception("Data length and input names length must be the same");
       }
       try {
-        var data;
         var inputData = [];
         var typeInputdata = [];
         if (onnxRequest.typeInputData == null) {
           for (var inputObject in onnxRequest.dataMulti!) {
             typeInputdata.add(inputObject.runtimeType.toString());
-            inputData.add(jsonEncode(inputObject));
+            inputData.add(inputObject);
           }
         } else {
           for (var inputObject in onnxRequest.dataMulti!) {
-            inputData.add(jsonEncode(inputObject));
+            inputData.add(inputObject);
           }
           typeInputdata = onnxRequest.typeInputData!;
         }
-        data = await jsVMService.callJSAsync(
-            "window.onnx.runModel($inputData, ${onnxRequest.shape}, $typeInputdata,${onnxRequest.threshold})");
+        final convertTypeInputData = jsonEncode(typeInputdata);
+        final convertInputData = jsonEncode(inputData);
+        final data = await jsVMService.callJSAsync(
+            "window.onnx.runModel('$convertInputData', ${onnxRequest.shape}, '$convertTypeInputData',${onnxRequest.threshold})");
         final dataOutput = await jsonDecode(data);
         Map<String, dynamic> sortedData = {};
         for (var oneOutput in outputNames!) {
@@ -169,7 +187,7 @@ class ONNX implements ProviderAiService {
             ..sort((a, b) => (b.value as double).compareTo(a.value as double));
           sortedData.addEntries(sortedEntries);
         }
-        log('fds');
+        log("Model run successful: $sortedData");
       } catch (e) {
         throw Exception("Error: $e");
       }
@@ -180,9 +198,18 @@ class ONNX implements ProviderAiService {
   }
 
   @override
-  Future stopModel() {
-    // TODO: implement stopModel
-    throw UnimplementedError();
+  Future stopModel() async {
+    try {
+      final stopeSession =
+          await jsVMService.callJSAsync("window.onnx.stopModel()");
+      Map<String, dynamic> res = jsonDecode(stopeSession);
+      if (res.containsKey("error")) {
+        throw Exception("${res["error"]}");
+      }
+      log('Model was close successful');
+    } catch (e) {
+      throw Exception("Model wasn`t stop: $e");
+    }
   }
 
   Future test() async {

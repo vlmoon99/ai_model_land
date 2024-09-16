@@ -29,7 +29,7 @@ class TensorFlowLiteWeb implements TensorFlowLite {
   }
 
   @override
-  bool isModelLoaded() {
+  Future<bool> isModelLoaded() {
     throw UnsupportedError("No interaction for this os");
   }
 

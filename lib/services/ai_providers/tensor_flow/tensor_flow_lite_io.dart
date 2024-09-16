@@ -270,14 +270,14 @@ class TensorFlowLiteIO implements TensorFlowLite {
   }
 
   @override
-  bool isModelLoaded() {
+  Future<bool> isModelLoaded() {
     if (_interpreter != null) {
       if (_interpreter!.isDeleted) {
-        return false;
+        return Future.value(false);
       }
-      return true;
+      return Future.value(true);
     } else {
-      return false;
+      return Future.value(false);
     }
   }
 

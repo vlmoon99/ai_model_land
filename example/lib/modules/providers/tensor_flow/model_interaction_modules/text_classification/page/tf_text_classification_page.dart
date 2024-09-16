@@ -131,8 +131,11 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
     }
   }
 
-  bool checkModelLoaded({required BaseModel baseModel}) {
-    return _aiModelLand.isModelLoaded(baseModel: baseModel);
+  void checkModelLoadedStop({required BaseModel baseModel}) async {
+    final modelUpload = await _aiModelLand.isModelLoaded(baseModel: baseModel);
+    if (modelUpload) {
+      stopModel(baseModel: baseModel);
+    }
   }
 
   @override
@@ -143,10 +146,7 @@ class _TfTextClassificationPageState extends State<TfTextClassificationPage> {
 
   @override
   void dispose() {
-    final modelUpload = checkModelLoaded(baseModel: baseModel);
-    if (modelUpload) {
-      stopModel(baseModel: baseModel);
-    }
+    checkModelLoadedStop(baseModel: baseModel);
     super.dispose();
   }
 

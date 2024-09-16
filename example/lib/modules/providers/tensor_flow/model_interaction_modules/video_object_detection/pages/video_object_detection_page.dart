@@ -32,8 +32,11 @@ class TF_VideoObjectDetectionPageState
 
   //assets/tensorflowlite/live_object_detection/labelmap.txt
 
-  bool checkModelLoaded({required BaseModel baseModel}) {
-    return _aiModelLand.isModelLoaded(baseModel: baseModel);
+  void checkModelLoadedStop({required BaseModel baseModel}) async {
+    final modelUpload = await _aiModelLand.isModelLoaded(baseModel: baseModel);
+    if (modelUpload) {
+      stopModel(baseModel: baseModel);
+    }
   }
 
   Future<bool> loadModel({required BaseModel baseModel}) async {
@@ -56,10 +59,7 @@ class TF_VideoObjectDetectionPageState
 
   @override
   void dispose() {
-    final modelUpload = checkModelLoaded(baseModel: baseModel);
-    if (modelUpload) {
-      stopModel(baseModel: baseModel);
-    }
+    checkModelLoadedStop(baseModel: baseModel);
     super.dispose();
   }
 
