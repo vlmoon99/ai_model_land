@@ -74,3 +74,4 @@ flutter:
     - assets/tensorflowlite/live_object_detection/ssd_mobilenet.tflite
     - assets/tensorflowlite/live_object_detection/labelmap.txt
     - assets/onnx/image_classification/mobilenetv2-7.onnx
+    - assets/onnx/image_classification/classes.txt

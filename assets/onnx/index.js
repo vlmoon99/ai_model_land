@@ -1,7 +1,6 @@
 export class Onnx {
     modelBuffer = [];
     worker;
-    mergedArray;
     numThreads;
     
     receiveChunk(chunk) {
@@ -49,7 +48,7 @@ export class Onnx {
                 console.log(input);
                 let inputData = {};
                 for(var i = 0; i < input.length; i++){
-                  inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);
+                  inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);;
                 }
                 const output = await session.run(inputData);
                 console.log('run');
@@ -74,6 +73,7 @@ export class Onnx {
                     output: outputData,
                 });
             } catch (e) {
+             console.log(e);
                 self.postMessage({
                     status: 'error',
                     message: error.toString()
@@ -118,118 +118,6 @@ export class Onnx {
     }
   }
 
-  async testloadWorkerModel() {
-    if (this.worker != null) {
-      throw new Error("Worker work already");
-    } else {
-    try {
-      const response = await fetch('../testModel/mobilenetv2-7.onnx');
-      const data = await response.arrayBuffer();
-      const uint8Array = new Uint8Array(data);
-      console.log(uint8Array.length);
-      const workerCode = `
-      self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js');
-      ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
-      ort.env.wasm.numThreads = 1;
-      let session;
-      let inputNames;
-      let outputNames;
-      self.onmessage = async function(e) {
-        const { isRun } = e.data;
-        if(isRun == false){
-          console.log("In worker");
-        try {
-          const { modelData } = e.data;
-          session = await ort.InferenceSession.create(modelData);
-          inputNames = session["handler"]["inputNames"];
-          outputNames = session["handler"]["outputNames"];
-          console.log('Create');
-          self.postMessage({
-            status: 'success',
-            inputNames: inputNames,
-            outputNames: outputNames,
-          });
-        } catch (error) {
-          self.postMessage({
-            status: 'error',
-            message: error.toString()
-          });
-        }
-      } else {
-          try{
-              const { input, threshold, shape } = e.data;
-              let outputData = {};          
-              console.log(input);
-              let inputData = {};
-              for(var i = 0; i < input.length; i++){
-                inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);
-              }
-              const output = await session.run(inputData);
-              console.log('run');
-              if (threshold != undefined){
-                for(var i = 0; i < outputNames.length; i++) {
-                  const data = output[outputNames[i]]["cpuData"];
-                  const entries = Object.entries(data);
-                  const filteredEntries = entries.filter(([, value]) => value > threshold);
-                  filteredEntries.sort(([, valueA], [, valueB]) => valueB - valueA);
-                  const sortedObject = Object.fromEntries(filteredEntries);
-
-                  console.log(sortedObject);
-                  outputData[outputNames[i]] = sortedObject;
-                }
-              } else {
-                for(var i = 0; i < outputNames.length; i++) {
-                  outputData[outputNames[i]] = output[outputNames[i]]["cpuData"];
-                }
-              }
-              self.postMessage({
-                  status: 'success',
-                  output: outputData,
-              });
-          } catch (e) {
-              self.postMessage({
-                  status: 'error',
-                  message: error.toString()
-              });
-          }
-          }
-      };
-    `;
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-     this.worker = new Worker(URL.createObjectURL(blob));
-      return await new Promise((resolve, reject) => {
-          this.worker.postMessage({
-            isRun: false,
-            modelData: uint8Array
-          });
-  
-
-          this.worker.onmessage = function(e) {
-          const { status, inputNames, outputNames, message } = e.data;
-  
-          if (status === 'success') {
-            console.log('ONNX Session created successfully');
-            console.log('Input Names:', inputNames);
-            console.log('Output Names:', outputNames);
-            resolve({ res: JSON.stringify({inputNames, outputNames})});
-          } else if (status === 'error') {
-            console.error('Error creating ONNX Session:', message);
-            reject(new Error('Error creating ONNX Session:' + message));
-          }
-        };
-  
-
-        this.worker.onerror = function(error) {
-          console.error('Error in worker:', error.message);
-          reject(error);
-        };
-      });
-    } catch (e) {
-      console.error(`Error in load ONNX Worker: ${e.message}`);
-      throw new Error(`Error in load ONNX Worker: ${e.message}`);
-    }
-  }
-}
 
   async runModel(inputsDatajson, shape, typeInputData ,threshold = undefined) {
      if (this.worker == null){
@@ -242,14 +130,17 @@ export class Onnx {
         let input = [];
         for(var i = 0; i < convertInputsDatajson.length; i++){
           switch (convertTypeInputData[i]) {
+            case "_Float32ArrayView":
             case "Float32List":
               const correctDataFloat32 = new Float32Array(convertInputsDatajson[i]);
               input.push(correctDataFloat32);
               break;
             case "Float64List":
+            case "_Float64ArrayView":
               const correctDataFloat64 = new Float64Array(convertInputsDatajson[i]);
               input.push(correctDataFloat64);
               break;
+            case "_Uint8ArrayView":
             case "Uint8List":
               const correctDataUint8Array = new Uint8Array(convertInputsDatajson[i]);
               input.push(correctDataUint8Array);
@@ -323,18 +214,18 @@ export class Onnx {
       if(this.modelBuffer.length != 0){
         try{
             let totalLength = this.modelBuffer.reduce((acc, val) => acc + val.length, 0);
-            this.mergedArray = new Uint8Array(totalLength);
+            const mergedArray = new Uint8Array(totalLength);
             let offset = 0;
             
             for (let chunk of this.modelBuffer) {
-              this.mergedArray.set(chunk, offset);
+              mergedArray.set(chunk, offset);
                 offset += chunk.length;
             }
-            console.log(this.mergedArray.byteLength);
+            console.log(mergedArray.byteLength);
             this.modelBuffer = [];
             totalLength = null;
             offset = null;
-            var res = await this.loadWorkerModel(this.mergedArray, numThreads);
+            var res = await this.loadWorkerModel(mergedArray, numThreads);
             return res.res;
         }catch(e){
             return JSON.stringify({error: `${e}`});
@@ -352,7 +243,6 @@ export class Onnx {
       try{
       await this.worker.terminate();
       this.worker = null;
-      this.mergedArray = null;
       return JSON.stringify({res: true});
       } catch (e) {
         throw JSON.stringify({error: new Error(`${e}`)});
@@ -365,7 +255,7 @@ export class Onnx {
       }
       await this.worker.terminate();
       this.worker = null;
-      var res = await this.loadWorkerModel(this.mergedArray, this.numThreads);
+      var res = await this.createSessionBuffer(this.numThreads);
       if (res["error"] == null) {
         return JSON.stringify({res: true});
       } else {

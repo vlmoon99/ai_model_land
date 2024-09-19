@@ -25,6 +25,7 @@ class _MainOnnxPageState extends State<MainOnnxPage> {
             Flexible(
                 child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Align(
                     alignment: Alignment.center,
@@ -38,11 +39,15 @@ class _MainOnnxPageState extends State<MainOnnxPage> {
                     "In this section you can see how different models work in practice.",
                     style: Thems.textStyle,
                   ),
-                  CustomButton(
-                      onPressed: () {
-                        Modular.to.pushNamed("//home/onnx/test");
-                      },
-                      text: "Image Classification Model")
+                  SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.center,
+                    child: CustomButton(
+                        onPressed: () {
+                          Modular.to.pushNamed("//home/onnx/test");
+                        },
+                        text: "Image Classification Model"),
+                  )
                 ],
               ),
             ))
