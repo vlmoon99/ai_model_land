@@ -159,16 +159,16 @@ class TensorFlowLiteIO implements TensorFlowLite {
       if (tensorRequest.data == null && tensorRequest.dataMulti == null) {
         throw Exception('Data is absent');
       } else if (tensorRequest.data != null) {
-        return await _singleInputInteraction(tensorRequest: tensorRequest);
+        return await singleInputInteraction(tensorRequest: tensorRequest);
       } else {
-        return await _multiInputInteraction(tensorRequest: tensorRequest);
+        return await multiInputInteraction(tensorRequest: tensorRequest);
       }
     } catch (e) {
       throw Exception("Model no run successful: $e");
     }
   }
 
-  Future<TensorFlowResponseModel> _singleInputInteraction(
+  Future<TensorFlowResponseModel> singleInputInteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
     List<String> lableList;
     final List<dynamic> outputTensor = createOutputTensorsSingle();
@@ -214,7 +214,7 @@ class TensorFlowLiteIO implements TensorFlowLite {
     return outputTensor;
   }
 
-  Future<TensorFlowResponseModel> _multiInputInteraction(
+  Future<TensorFlowResponseModel> multiInputInteraction(
       {required TensorFlowRequestModel tensorRequest}) async {
     final Map<int, List<dynamic>> outputTensors = createOutputTensorsMulti();
 

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
+import 'package:ai_model_land/models/providers/onnx/onnx_respons_model.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
@@ -28,6 +29,10 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
   final UtilsClass preprocesingclass = Modular.get<UtilsClass>();
   final sourceController = TextEditingController();
   Float32List? inputBytes;
+  Future<bool>? isLoad;
+  bool? isModelLoaded;
+  Future<bool>? restartStop;
+  Future<List<String>>? predict;
 
   BaseModel baseModel = BaseModel(
       source: "assets/onnx/image_classification/mobilenetv2-7.onnx",
@@ -41,33 +46,40 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
         baseModel: baseModel);
   }
 
-  Future runModel({required Float32List inputBytes}) async {
-    return await _aiModelLand.runTaskOnTheModel(
+  Future<List<String>> runModel({required Float32List inputBytes}) async {
+    List<String> lines = await preprocesingclass.convertFileToList(
+        assetsPath: 'assets/onnx/image_classification/classes.txt');
+    OnnxResponsModel predict = await _aiModelLand.runTaskOnTheModel(
         request: OnnxRequestModel(dataMulti: [
           inputBytes
         ], shape: [
           [1, 3, 224, 224]
-        ], threshold: 4),
-        baseModel: baseModel);
+        ], threshold: 3, topPredictEntries: 5),
+        baseModel: baseModel) as OnnxResponsModel;
+    final convertPredict = predict.predict!.first.entries
+        .map((entry) =>
+            "${lines[int.parse(entry.key)]} - ${(entry.value as double).toStringAsFixed(2)}")
+        .toList();
+    return convertPredict;
   }
 
   Future<String?> pickFileIMG() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
       if (kIsWeb == true) {
-        // final bytes = result.files.first.bytes;
-        // if (bytes != null && bytes.isNotEmpty) {
-        //   img.Image image = img.decodeImage(bytes)!;
-        //   img.Image resizedImage =
-        //       img.copyResize(image, width: 224, height: 224);
-        //   final Float32List photoConvert = preprocesingclass
-        //       .imageDataToTensor(resizedImage.getBytes(), [1, 3, 224, 224]);
-        //   setState(() {
-        //     inputBytes = photoConvert;
-        //   });
-        // } else {
-        //   throw Exception("Bytes file not exist");
-        // }
+        final bytes = result.files.first.bytes;
+        if (bytes != null && bytes.isNotEmpty) {
+          img.Image image = img.decodeImage(bytes)!;
+          img.Image resizedImage =
+              img.copyResize(image, width: 224, height: 224);
+          final Float32List photoConvert = preprocesingclass.preprocesstest(
+              resizedImage.getBytes(), 224, 224);
+          setState(() {
+            inputBytes = photoConvert;
+          });
+        } else {
+          throw Exception("Bytes file not exist");
+        }
       } else {
         final file = File(result.files.single.path!);
         if (await file.exists()) {
@@ -75,10 +87,8 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
           img.Image image = img.decodeImage(bytes)!;
           img.Image resizedImage =
               img.copyResize(image, width: 224, height: 224);
-          final Float32List photoConvert = preprocesingclass
-              .imageDataToTensor(resizedImage, [1, 3, 224, 224]);
-          //               final Float32List photoConvert = preprocesingclass.imageDataToTensor(
-          // resizedImage.buffer.asUint8List(), [1, 3, 224, 224]);
+          final Float32List photoConvert = preprocesingclass.preprocesstest(
+              resizedImage.getBytes(), 224, 224);
           setState(() {
             inputBytes = photoConvert;
           });
@@ -93,13 +103,13 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
 
   Future<bool> stopModel() async {
     await _aiModelLand.stopModel(baseModel: baseModel);
-    return true;
+    return Future.value(true);
   }
 
   Future<bool> restartModel() async {
     await _aiModelLand.restartModel(
         request: OnnxRequestModel(), baseModel: baseModel);
-    return true;
+    return Future.value(true);
   }
 
   void checkModelLoadedStop({required BaseModel baseModel}) async {
@@ -127,42 +137,243 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
             Flexible(
                 child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      "ONNX Model Image",
+                      style: Thems.textStyle,
+                    ),
+                  ),
+                  SizedBox(height: 6),
                   Text(
-                    "ONNX Model Image",
+                    "This model can identify what is depicted in a picture.",
                     style: Thems.textStyle,
                   ),
+                  Text(
+                    "For interaction:",
+                    style: Thems.textStyle,
+                  ),
+                  Text(
+                    "The first step, is to upload the model to the provider.",
+                    style: Thems.textStyle,
+                  ),
+                  SizedBox(height: 10),
                   Align(
-                      alignment: Alignment.center,
-                      child: Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: pickFileIMG,
-                            child: Text('Pick image File'),
+                    alignment: Alignment.center,
+                    child: Column(
+                      children: [
+                        FilledButton(
+                            onPressed: () async {
+                              setState(() {
+                                isLoad = loadModel();
+                              });
+                              final res = await isLoad;
+                              setState(() {
+                                isModelLoaded = res;
+                              });
+                            },
+                            style: Thems.buttonStyle,
+                            child: Text(
+                              "Load Model",
+                              style: Thems.textStyle,
+                            )),
+                        SizedBox(width: 10),
+                        isLoad == null
+                            ? Text("Result: model not load",
+                                style: Thems.textStyle.copyWith(fontSize: 15))
+                            : FutureBuilder(
+                                future: isLoad,
+                                builder: (BuildContext context,
+                                    AsyncSnapshot<bool> snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  } else if (snapshot.hasError) {
+                                    return SelectableText(
+                                        'Error: ${snapshot.error}');
+                                  } else if (snapshot.data == true) {
+                                    return Text("Result: model was loaded",
+                                        style: Thems.textStyle
+                                            .copyWith(fontSize: 15));
+                                  } else {
+                                    return Text("Result: try add again",
+                                        style: Thems.textStyle
+                                            .copyWith(fontSize: 15));
+                                  }
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "The second step is to load the image, choose image and run the model.",
+                    style: Thems.textStyle,
+                  ),
+                  SizedBox(height: 10),
+                  isModelLoaded != true
+                      ? Container(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Load the model",
+                              style: Thems.textStyle,
+                            ),
                           ),
-                          CustomButton(
-                              onPressed: () async {
-                                await loadModel();
-                              },
-                              text: "Load Model"),
-                          FilledButton(
-                              onPressed: () {
-                                if (inputBytes != null) {
-                                  runModel(inputBytes: inputBytes!);
-                                }
-                              },
-                              child: Text("Run model")),
-                          ElevatedButton(
-                            onPressed: stopModel,
-                            child: Text('Stop Model'),
+                        )
+                      : Align(
+                          alignment: Alignment.center,
+                          child: Column(
+                            children: [
+                              FilledButton(
+                                onPressed: pickFileIMG,
+                                style: Thems.buttonStyle,
+                                child: Text(
+                                  'Pick image File',
+                                  style: Thems.textStyle,
+                                ),
+                              ),
+                              inputBytes == null
+                                  ? Text(
+                                      "Image not add",
+                                      style: Thems.textStyle
+                                          .copyWith(fontSize: 15),
+                                    )
+                                  : Text("Image was add",
+                                      style: Thems.textStyle
+                                          .copyWith(fontSize: 15)),
+                              SizedBox(height: 10),
+                              FilledButton(
+                                  onPressed: () {
+                                    if (inputBytes != null) {
+                                      setState(() {
+                                        predict =
+                                            runModel(inputBytes: inputBytes!);
+                                      });
+                                    }
+                                  },
+                                  style: Thems.buttonStyle,
+                                  child: Text(
+                                    "Run model",
+                                    style: Thems.textStyle,
+                                  )),
+                              predict == null
+                                  ? Align(
+                                      alignment: Alignment.center,
+                                      child: Text("No predictions"))
+                                  : FutureBuilder(
+                                      future: predict,
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<List<String>>
+                                              snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const CircularProgressIndicator();
+                                        } else if (snapshot.hasError) {
+                                          return SelectableText(
+                                              'Error: ${snapshot.error}');
+                                        } else if (snapshot.data!.isNotEmpty) {
+                                          List<Widget> listWidgetText =
+                                              snapshot.data!.map((predict) {
+                                            return Text(
+                                              predict,
+                                              style: Thems.textStyle,
+                                            );
+                                          }).toList();
+                                          return Align(
+                                            alignment: Alignment.center,
+                                            child: Column(
+                                              children: listWidgetText,
+                                            ),
+                                          );
+                                        } else {
+                                          return Text(
+                                              "Predict is absent or some gone wrong");
+                                        }
+                                      },
+                                    ),
+                            ],
                           ),
-                          ElevatedButton(
-                            onPressed: restartModel,
-                            child: Text('Restart Model'),
+                        ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Also we can stop or restart model if this needs",
+                    style: Thems.textStyle,
+                  ),
+                  SizedBox(height: 10),
+                  isModelLoaded != true
+                      ? Container(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Load the model",
+                              style: Thems.textStyle,
+                            ),
                           ),
-                        ],
-                      )),
-                  SelectableText("${sourceController.text}"),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    restartStop = stopModel();
+                                  });
+                                  isModelLoaded = false;
+                                },
+                                style: Thems.buttonStyle,
+                                child: Text(
+                                  'Stop Model',
+                                  style: Thems.textStyle,
+                                ),
+                              ),
+                            ),
+                            Spacer(),
+                            Flexible(
+                              child: FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    restartStop = restartModel();
+                                  });
+                                },
+                                style: Thems.buttonStyle,
+                                child: Text(
+                                  'Restart Model',
+                                  style: Thems.textStyle,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                  Align(
+                    alignment: Alignment.center,
+                    child: restartStop == null
+                        ? Container()
+                        : FutureBuilder(
+                            future: restartStop,
+                            builder: (BuildContext context,
+                                AsyncSnapshot<bool> snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return SelectableText(
+                                    'Error: ${snapshot.error}');
+                              } else if (snapshot.data == true) {
+                                return Text("Result: success",
+                                    style:
+                                        Thems.textStyle.copyWith(fontSize: 15));
+                              } else {
+                                return Text("Result: try again",
+                                    style:
+                                        Thems.textStyle.copyWith(fontSize: 15));
+                              }
+                            },
+                          ),
+                  ),
                 ],
               ),
             ))

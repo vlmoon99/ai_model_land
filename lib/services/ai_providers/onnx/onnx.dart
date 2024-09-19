@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -14,11 +13,15 @@ import 'package:ai_model_land/services/js_engines/interface/js_engine_stub.dart'
     if (dart.library.js) 'package:ai_model_land/services/js_engines/implementation/web_js_engine.dart';
 import 'package:flutter/services.dart';
 
+import '../../../models/providers/onnx/onnx_respons_model.dart';
+
 class ONNX implements ProviderAiService {
   // OrtSessionOptions? sessionOptions;
   // OrtSession? session;
   List<dynamic>? inputNames;
   List<dynamic>? outputNames;
+  Uint8List? modelByts;
+
   JsVMService jsVMService;
   ONNX({required this.jsVMService}) {}
 
@@ -39,6 +42,7 @@ class ONNX implements ProviderAiService {
             {
               final file = File(baseModel.source);
               if (await file.exists()) {
+                modelByts = file.readAsBytesSync();
                 return await loadModelCreateSession(
                     modelBuffer: file.readAsBytesSync(),
                     numThreads: onnxRequest.numThreads);
@@ -50,12 +54,14 @@ class ONNX implements ProviderAiService {
             {
               final byteData = await rootBundle.load(baseModel.source);
               Uint8List modelBuffer = byteData.buffer.asUint8List();
+              modelByts = modelBuffer;
               return await loadModelCreateSession(
                   modelBuffer: modelBuffer, numThreads: onnxRequest.numThreads);
             }
           case LoadModelWay.fromBuffer:
             {
               if (onnxRequest.uint8list != null) {
+                modelByts = onnxRequest.uint8list;
                 return await loadModelCreateSession(
                     modelBuffer: onnxRequest.uint8list,
                     numThreads: onnxRequest.numThreads);
@@ -99,7 +105,7 @@ class ONNX implements ProviderAiService {
 
   Future<bool> loadOnWeb(
       {required Uint8List byts, required String callFunction}) async {
-    int chunkSize = byts.length ~/ 50; // 1MB chunks
+    int chunkSize = byts.length ~/ 50;
     int offset = 0;
 
     while (offset < byts.length) {
@@ -134,15 +140,25 @@ class ONNX implements ProviderAiService {
   @override
   Future restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
+    if (modelByts == null) {
+      throw Exception("Model data not found");
+    }
     try {
-      final restartResponse =
-          await jsVMService.callJSAsync("window.onnx.restartModel()");
-      Map<String, dynamic> res = jsonDecode(restartResponse);
+      final isLoad = await loadOnWeb(
+          byts: modelByts!, callFunction: "window.onnx.receiveChunk");
+      ;
+      if (isLoad == true) {
+        final restartResponse =
+            await jsVMService.callJSAsync("window.onnx.restartModel()");
+        Map<String, dynamic> res = jsonDecode(restartResponse);
 
-      if (res.containsKey("error")) {
-        throw Exception("${res["error"]}");
+        if (res.containsKey("error")) {
+          throw Exception("${res["error"]}");
+        }
+        print('Model restart successful');
+      } else {
+        throw Exception("Model wasn`t load");
       }
-      log('Model restart successful');
     } catch (e) {
       throw Exception("$e");
     }
@@ -181,20 +197,27 @@ class ONNX implements ProviderAiService {
         final data = await jsVMService.callJSAsync(
             "window.onnx.runModel('$convertInputData', ${onnxRequest.shape}, '$convertTypeInputData',${onnxRequest.threshold})");
         final dataOutput = await jsonDecode(data);
-        Map<String, dynamic> sortedData = {};
+        List<Map<String, dynamic>> predict = [];
         for (var oneOutput in outputNames!) {
+          Map<String, dynamic> sortedData = {};
           var sortedEntries = dataOutput["output"][oneOutput].entries.toList()
             ..sort((a, b) => (b.value as double).compareTo(a.value as double));
-          sortedData.addEntries(sortedEntries);
+          if (onnxRequest.topPredictEntries != null) {
+            var topPredictValue =
+                sortedEntries.take(onnxRequest.topPredictEntries).toList();
+            sortedData.addEntries(topPredictValue);
+          } else {
+            sortedData.addEntries(sortedEntries);
+          }
+          predict.add(sortedData);
         }
-        log("Model run successful: $sortedData");
+        return OnnxResponsModel(predict: predict);
       } catch (e) {
         throw Exception("Error: $e");
       }
     } else {
       throw Exception("Input data not load or shape not found");
     }
-    throw UnimplementedError();
   }
 
   @override
@@ -206,19 +229,10 @@ class ONNX implements ProviderAiService {
       if (res.containsKey("error")) {
         throw Exception("${res["error"]}");
       }
-      log('Model was close successful');
+      modelByts = null;
+      print('Model was close successful');
     } catch (e) {
       throw Exception("Model wasn`t stop: $e");
-    }
-  }
-
-  Future test() async {
-    try {
-      final res = await jsVMService.callJSAsync("window.onnx.test()");
-      print(res);
-      final data = jsonDecode(res);
-    } catch (e) {
-      throw Exception("Error: $e");
     }
   }
 }

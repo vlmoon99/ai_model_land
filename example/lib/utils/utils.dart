@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:image/image.dart';
@@ -15,7 +16,7 @@ class UtilsClass {
     final String pad = '<PAD>';
     final String unk = '<UNKNOWN>';
     final Map<String, int> _dict =
-        await _loadDictionary(vocabulary: vocab, isFile: isFile);
+        await loadDictionary(vocabulary: vocab, isFile: isFile);
 
     // Whitespace tokenization
     final toks = text.split(' ');
@@ -42,7 +43,7 @@ class UtilsClass {
     return [vec];
   }
 
-  Future<Map<String, int>> _loadDictionary(
+  Future<Map<String, int>> loadDictionary(
       {required String vocabulary, required bool isFile}) async {
     String vocab;
     if (isFile == true) {
@@ -75,78 +76,69 @@ class UtilsClass {
     return convertedBytes.buffer.asUint8List();
   }
 
-  Float32List imageToByteListFloat32onnx(
-      img.Image image, int inputSize, List<double> mean, List<double> std) {
-    var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
-    var buffer = Float32List.view(convertedBytes.buffer);
-    int pixelIndex = 0;
-    for (var i = 0; i < inputSize; i++) {
-      for (var j = 0; j < inputSize; j++) {
-        var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (pixel.r / 255.0 - mean[0]) / std[0];
-        buffer[pixelIndex++] = (pixel.g / 255.0 - mean[1]) / std[1];
-        buffer[pixelIndex++] = (pixel.b / 255.0 - mean[2]) / std[2];
+  Float32List preprocesstest(Uint8List imageData, int width, int height) {
+    int channels = 3;
+    int imageSize = width * height * channels;
+
+    if (imageData.length < imageSize) {
+      throw RangeError(
+          "Image data size is too small for the provided dimensions.");
+    }
+
+    Float32List imgData = Float32List(imageSize);
+
+    int index = 0;
+    for (int c = 0; c < channels; c++) {
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          imgData[index++] =
+              imageData[(h * width + w) * channels + c].toDouble() / 255.0;
+        }
       }
     }
-    return convertedBytes;
-  }
 
-  Float32List imageDataToTensor(img.Image image, List<int> dims) {
-    // 1. Получение данных пикселей изображения
-    Uint8List imageBufferData = image.getBytes(); // Получение байт изображения
+    Float32List meanVec = Float32List.fromList([0.485, 0.456, 0.406]);
+    Float32List stddevVec = Float32List.fromList([0.229, 0.224, 0.225]);
 
-    // 2. Создание массивов для R, G и B каналов
-    List<int> redArray = [];
-    List<int> greenArray = [];
-    List<int> blueArray = [];
+    Float32List normImgData = Float32List(imageSize);
 
-    // 3. Извлечение R, G и B каналов из данных изображения
-    for (int i = 0; i < imageBufferData.length; i += 4) {
-      redArray.add(imageBufferData[i]); // Красный канал
-      greenArray.add(imageBufferData[i + 1]); // Зелёный канал
-      blueArray.add(imageBufferData[i + 2]); // Синий канал
-      // Пропускаем imageBufferData[i + 3], игнорируем альфа-канал
+    for (int c = 0; c < channels; c++) {
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          int idx = c * width * height + h * width + w;
+          normImgData[idx] = (imgData[idx] - meanVec[c]) / stddevVec[c];
+        }
+      }
     }
 
-    // 4. Конкатенация RGB каналов и транспонирование [224, 224, 3] -> [3, 224, 224]
-    List<int> transposedData = redArray + greenArray + blueArray;
-
-    // 5. Преобразование данных в Float32List и нормализация
-    Float32List float32Data = Float32List(dims[1] * dims[2] * dims[3]);
-    for (int i = 0; i < transposedData.length; i++) {
-      float32Data[i] =
-          transposedData[i] / 255.0; // Нормализация в диапазон [0, 1]
-    }
-
-    // Возвращаем массив float32, который можно передать в модель
-    return float32Data;
+    return normImgData;
   }
 
-  // Float32List imageDataToTensor(Uint8List data, List<int> dims) {
-  //   List<int> R = [];
-  //   List<int> G = [];
-  //   List<int> B = [];
+  Float32List testpreprocess(img.Image image) {
+    List<Float32List> transposeChannels =
+        List.generate(3, (i) => Float32List(image.height * image.width));
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        final pixel = image.getPixel(x, y);
+        transposeChannels[0][y * image.width + x] = pixel.b.toDouble();
+        transposeChannels[1][y * image.width + x] = pixel.g.toDouble();
+        transposeChannels[2][y * image.width + x] = pixel.r.toDouble();
+      }
+    }
 
-  //   // Извлекаем значения RGB
-  //   for (var i = 0; i < data.length; i += 4) {
-  //     R.add(data[i]); // Красный канал
-  //     G.add(data[i + 1]); // Зелёный канал
-  //     B.add(data[i + 2]); // Синий канал
-  //     // Пропускаем альфа-канал (data[i + 3])
-  //   }
+    List<double> meanVec = [0.485, 0.456, 0.406];
+    List<double> stddevVec = [0.229, 0.224, 0.225];
+    Float32List normImgData = Float32List(3 * image.height * image.width);
 
-  //   // Конкатенируем R, G и B, транспонируя изображение
-  //   List<int> transposedData = R + G + B;
+    for (int c = 0; c < 3; c++) {
+      for (int i = 0; i < image.height * image.width; i++) {
+        normImgData[c * image.height * image.width + i] =
+            (transposeChannels[c][i] / 255.0 - meanVec[c]) / stddevVec[c];
+      }
+    }
 
-  //   // Преобразуем в Float32List и нормализуем
-  //   Float32List float32Data = Float32List(3 * 224 * 224);
-  //   for (var i = 0; i < transposedData.length; i++) {
-  //     float32Data[i] = transposedData[i] / 255.0; // Нормализация
-  //   }
-
-  //   // Возвращаем нормализованные данные
-  //   return float32Data;
-  // }
+    return normImgData;
+  }
 
   static Float64List imageToFloatBuffer(
       Image image, List<double> mean, List<double> std,
@@ -180,6 +172,16 @@ class UtilsClass {
     }
 
     return bytes;
+  }
+
+  Future<List<String>> convertFileToList({required String assetsPath}) async {
+    final lablesData = await rootBundle.loadString(assetsPath);
+    List<String> lines = lablesData
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines;
   }
 
   /// Converts a [CameraImage] in YUV420 format to [Image] in RGB format
