@@ -2,7 +2,7 @@ import 'package:ai_model_land_example/modules/providers/onnx/model_interaction_m
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-class ONNXTestModule extends Module {
+class ONNXImageClassificationModule extends Module {
   @override
   void binds(i) {}
 

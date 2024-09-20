@@ -7,7 +7,6 @@ import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
 import 'package:ai_model_land/models/providers/onnx/onnx_respons_model.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
-import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
 import 'package:ai_model_land_example/thems/thems.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:file_picker/file_picker.dart';
@@ -27,7 +26,6 @@ class OnnxImageClassification extends StatefulWidget {
 class _OnnxImageClassificationState extends State<OnnxImageClassification> {
   final GlobalVM _aiModelLand = Modular.get(key: 'GlobalVM');
   final UtilsClass preprocesingclass = Modular.get<UtilsClass>();
-  final sourceController = TextEditingController();
   Float32List? inputBytes;
   Future<bool>? isLoad;
   bool? isModelLoaded;

@@ -42,11 +42,30 @@ class _MainOnnxPageState extends State<MainOnnxPage> {
                   SizedBox(height: 6),
                   Align(
                     alignment: Alignment.center,
-                    child: CustomButton(
-                        onPressed: () {
-                          Modular.to.pushNamed("//home/onnx/test");
-                        },
-                        text: "Image Classification Model"),
+                    child: Column(
+                      children: [
+                        CustomButton(
+                            onPressed: () {
+                              Modular.to.pushNamed(
+                                  "//home/onnx/photo-detection-classification");
+                            },
+                            text: "Image Classification Model"),
+                        SizedBox(height: 8),
+                        CustomButton(
+                            onPressed: () {
+                              Modular.to.pushNamed(
+                                  "//home/onnx/gender-classification");
+                            },
+                            text: "Gender Classification Model"),
+                        SizedBox(height: 8),
+                        CustomButton(
+                            onPressed: () {
+                              Modular.to
+                                  .pushNamed("//home/onnx/age-classification");
+                            },
+                            text: "Age Classification Model"),
+                      ],
+                    ),
                   )
                 ],
               ),
