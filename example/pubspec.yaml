@@ -75,3 +75,5 @@ flutter:
     - assets/tensorflowlite/live_object_detection/labelmap.txt
     - assets/onnx/image_classification/mobilenetv2-7.onnx
     - assets/onnx/image_classification/classes.txt
+    - assets/onnx/gender_classification/gender_googlenet.onnx
+    - assets/onnx/age_classification/age_googlenet.onnx

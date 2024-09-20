@@ -18,10 +18,8 @@ class UtilsClass {
     final Map<String, int> _dict =
         await loadDictionary(vocabulary: vocab, isFile: isFile);
 
-    // Whitespace tokenization
     final toks = text.split(' ');
 
-    // Create a list of length==_sentenceLen filled with the value <pad>
     var vec = List<double>.filled(_sentenceLen, _dict[pad]!.toDouble());
 
     var index = 0;
@@ -29,7 +27,6 @@ class UtilsClass {
       vec[index++] = _dict[start]!.toDouble();
     }
 
-    // For each word in sentence find corresponding index in dict
     for (var tok in toks) {
       if (index > _sentenceLen) {
         break;
@@ -39,7 +36,6 @@ class UtilsClass {
           : _dict[unk]!.toDouble();
     }
 
-    // returning List<List<double>> as our interpreter input tensor expects the shape, [1,256]
     return [vec];
   }
 
@@ -114,7 +110,7 @@ class UtilsClass {
     return normImgData;
   }
 
-  Float32List testpreprocess(img.Image image) {
+  Float32List preprocessGender(img.Image image) {
     List<Float32List> transposeChannels =
         List.generate(3, (i) => Float32List(image.height * image.width));
     for (int y = 0; y < image.height; y++) {
@@ -126,14 +122,13 @@ class UtilsClass {
       }
     }
 
-    List<double> meanVec = [0.485, 0.456, 0.406];
-    List<double> stddevVec = [0.229, 0.224, 0.225];
+    List<double> meanVec = [104, 117, 123];
     Float32List normImgData = Float32List(3 * image.height * image.width);
 
     for (int c = 0; c < 3; c++) {
       for (int i = 0; i < image.height * image.width; i++) {
         normImgData[c * image.height * image.width + i] =
-            (transposeChannels[c][i] / 255.0 - meanVec[c]) / stddevVec[c];
+            transposeChannels[c][i] - meanVec[c];
       }
     }
 
