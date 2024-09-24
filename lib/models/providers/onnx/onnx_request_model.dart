@@ -43,6 +43,8 @@ class OnnxRequestModel implements TaskRequestModel {
 
   int? topPredictEntries;
 
+  Function(double)? onProgressUpdate;
+
   OnnxRequestModel(
       {this.data,
       this.dataMulti,
@@ -59,5 +61,6 @@ class OnnxRequestModel implements TaskRequestModel {
       this.shape,
       this.typeInputData,
       this.numThreads,
-      this.topPredictEntries});
+      this.topPredictEntries,
+      this.onProgressUpdate});
 }

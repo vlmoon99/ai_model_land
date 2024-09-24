@@ -31,6 +31,7 @@ class _AgeClassificationPageState extends State<AgeClassificationPage> {
   Float32List? inputBytes;
   Future<String>? predict;
   Future<bool>? restartStop;
+  final ValueNotifier<double> percentNotifier = ValueNotifier<double>(0.0);
 
   BaseModel baseModel = BaseModel(
       source: "assets/onnx/age_classification/age_googlenet.onnx",
@@ -40,7 +41,14 @@ class _AgeClassificationPageState extends State<AgeClassificationPage> {
 
   Future<bool> loadModel() async {
     return await _aiModelLand.loadModel(
-        request: OnnxRequestModel(loadModelWay: LoadModelWay.fromAssets),
+        request: OnnxRequestModel(
+          loadModelWay: LoadModelWay.fromAssets,
+          onProgressUpdate: (double newProgress) {
+            setState(() {
+              percentNotifier.value = newProgress;
+            });
+          },
+        ),
         baseModel: baseModel);
   }
 
@@ -193,7 +201,22 @@ class _AgeClassificationPageState extends State<AgeClassificationPage> {
                                     AsyncSnapshot<bool> snapshot) {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
-                                    return const CircularProgressIndicator();
+                                    return Column(
+                                      children: [
+                                        CircularProgressIndicator(),
+                                        ValueListenableBuilder<double>(
+                                          valueListenable: percentNotifier,
+                                          builder: (context, percent, _) {
+                                            return Column(
+                                              children: [
+                                                Text(
+                                                    'Progress: ${percent.toStringAsFixed(2)}%'),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
                                   } else if (snapshot.hasError) {
                                     return SelectableText(
                                         'Error: ${snapshot.error}');

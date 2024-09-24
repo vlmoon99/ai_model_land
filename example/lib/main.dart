@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'package:ai_model_land/services/lib_initialization_service.dart';
 import 'package:ai_model_land_example/modules/app_module.dart';
-import 'package:ai_model_land_example/modules/home/page/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 void main() {

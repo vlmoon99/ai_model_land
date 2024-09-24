@@ -1,3 +1,4 @@
+import 'package:ai_model_land/services/ai_providers/onnx/onnx.dart';
 import 'package:ai_model_land_example/modules/providers/onnx/age_classification_modules/page/age_classification_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';

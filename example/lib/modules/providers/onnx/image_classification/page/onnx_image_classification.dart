@@ -31,6 +31,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
   bool? isModelLoaded;
   Future<bool>? restartStop;
   Future<List<String>>? predict;
+  final ValueNotifier<double> percentNotifier = ValueNotifier<double>(0.0);
 
   BaseModel baseModel = BaseModel(
       source: "assets/onnx/image_classification/mobilenetv2-7.onnx",
@@ -40,7 +41,14 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
 
   Future<bool> loadModel() async {
     return await _aiModelLand.loadModel(
-        request: OnnxRequestModel(loadModelWay: LoadModelWay.fromAssets),
+        request: OnnxRequestModel(
+          loadModelWay: LoadModelWay.fromAssets,
+          onProgressUpdate: (double newProgress) {
+            setState(() {
+              percentNotifier.value = newProgress;
+            });
+          },
+        ),
         baseModel: baseModel);
   }
 
@@ -187,7 +195,22 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                                     AsyncSnapshot<bool> snapshot) {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
-                                    return const CircularProgressIndicator();
+                                    return Column(
+                                      children: [
+                                        CircularProgressIndicator(),
+                                        ValueListenableBuilder<double>(
+                                          valueListenable: percentNotifier,
+                                          builder: (context, percent, _) {
+                                            return Column(
+                                              children: [
+                                                Text(
+                                                    'Progress: ${percent.toStringAsFixed(2)}%'),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
                                   } else if (snapshot.hasError) {
                                     return SelectableText(
                                         'Error: ${snapshot.error}');

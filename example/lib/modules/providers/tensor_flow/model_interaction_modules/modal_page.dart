@@ -180,24 +180,6 @@ class _ModelPageState extends State<ModelPage> {
     }
   }
 
-  // Future<String?> pickFileIMG() async {
-  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-  //   if (result != null) {
-  //     final listBity = await File(result.files.single.path!).readAsBytes();
-  //     img.Image image = img.decodeImage(listBity)!;
-  //     img.Image resizedImage = img.copyResize(image, width: 224, height: 224);
-  //     final Uint8List last = preprocesingclass.imageToByteListFloat32(
-  //         resizedImage, 224, 127.5, 127.5);
-  //     setState(() {
-  //       imgByteList = last;
-  //       inputObject = last;
-  //     });
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
   void resetAllInputs() {
     setState(() {
       imgByteList = null;
