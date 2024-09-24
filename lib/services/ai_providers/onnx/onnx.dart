@@ -16,8 +16,6 @@ import 'package:flutter/services.dart';
 import '../../../models/providers/onnx/onnx_respons_model.dart';
 
 class ONNX implements ProviderAiService {
-  // OrtSessionOptions? sessionOptions;
-  // OrtSession? session;
   List<dynamic>? inputNames;
   List<dynamic>? outputNames;
   Uint8List? modelByts;
@@ -35,6 +33,7 @@ class ONNX implements ProviderAiService {
   Future<bool> addModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
+      // percentNotifier.value = 0;
       final onnxRequest = request as OnnxRequestModel;
       if (onnxRequest.loadModelWay != null) {
         switch (onnxRequest.loadModelWay) {
@@ -45,7 +44,8 @@ class ONNX implements ProviderAiService {
                 modelByts = file.readAsBytesSync();
                 return await loadModelCreateSession(
                     modelBuffer: file.readAsBytesSync(),
-                    numThreads: onnxRequest.numThreads);
+                    numThreads: onnxRequest.numThreads,
+                    onProgressUpdate: onnxRequest.onProgressUpdate);
               } else {
                 throw Exception("File not exist");
               }
@@ -56,7 +56,9 @@ class ONNX implements ProviderAiService {
               Uint8List modelBuffer = byteData.buffer.asUint8List();
               modelByts = modelBuffer;
               return await loadModelCreateSession(
-                  modelBuffer: modelBuffer, numThreads: onnxRequest.numThreads);
+                  modelBuffer: modelBuffer,
+                  numThreads: onnxRequest.numThreads,
+                  onProgressUpdate: onnxRequest.onProgressUpdate);
             }
           case LoadModelWay.fromBuffer:
             {
@@ -64,7 +66,8 @@ class ONNX implements ProviderAiService {
                 modelByts = onnxRequest.uint8list;
                 return await loadModelCreateSession(
                     modelBuffer: onnxRequest.uint8list,
-                    numThreads: onnxRequest.numThreads);
+                    numThreads: onnxRequest.numThreads,
+                    onProgressUpdate: onnxRequest.onProgressUpdate);
               } else {
                 throw Exception("Buffer not found");
               }
@@ -84,10 +87,14 @@ class ONNX implements ProviderAiService {
   }
 
   Future<bool> loadModelCreateSession(
-      {required modelBuffer, int? numThreads}) async {
+      {required modelBuffer,
+      int? numThreads,
+      Function(double)? onProgressUpdate}) async {
     //numThreads recommend 1(by default 1)
     final isLoad = await loadOnWeb(
-        byts: modelBuffer, callFunction: "window.onnx.receiveChunk");
+        byts: modelBuffer,
+        callFunction: "window.onnx.receiveChunk",
+        onProgressUpdate: onProgressUpdate);
     if (isLoad == true) {
       final session = await jsVMService
           .callJSAsync("window.onnx.createSessionBuffer($numThreads)");
@@ -104,7 +111,9 @@ class ONNX implements ProviderAiService {
   }
 
   Future<bool> loadOnWeb(
-      {required Uint8List byts, required String callFunction}) async {
+      {required Uint8List byts,
+      required String callFunction,
+      Function(double)? onProgressUpdate}) async {
     int chunkSize = byts.length ~/ 50;
     int offset = 0;
 
@@ -115,6 +124,13 @@ class ONNX implements ProviderAiService {
       final res =
           await jsVMService.callJS(callFunction + "(${chunk.toString()})");
       offset += chunkSize;
+      if (onProgressUpdate != null) {
+        double progress = (offset / byts.length) * 100;
+        if (progress > 100) {
+          progress = 100;
+        }
+        onProgressUpdate(progress);
+      }
     }
     return true;
   }
