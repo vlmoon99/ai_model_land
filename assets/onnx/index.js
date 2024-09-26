@@ -8,15 +8,12 @@ export class Onnx {
         console.log('Received chunk of size model:', chunk.length);
     }
 
-    async loadWorkerModel(mergedArray, numThreads) {
+    async loadWorkerModel(mergedArray, numThreads, providWebGLWebGPU) {
       if (this.worker != null) {
         throw new Error("Worker work already");
       } else {
       try {
         const workerCode = `
-        self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js');
-        ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
-        ort.env.wasm.numThreads = ${numThreads};
         let session;
         let inputNames;
         let outputNames;
@@ -24,9 +21,25 @@ export class Onnx {
           const { isRun } = e.data;
           if(isRun == false){
             console.log("In worker");
+            const { providWebGLWebGPU } = e.data;
+  
+            if (providWebGLWebGPU == "webgpu") {
+              self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.webgpu.min.js');
+            } else if (providWebGLWebGPU == "webgl" || providWebGLWebGPU == "wasm" || providWebGLWebGPU == "cpu"){
+              self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js');
+            } else {
+              return self.postMessage({
+                status: 'error',
+                message: "Incorrect backend onnx"
+              });
+            }
+  
+            ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+            ort.env.wasm.numThreads = ${numThreads}; 
+  
           try {
             const { modelData } = e.data;
-            session = await ort.InferenceSession.create(modelData);
+            session = await ort.InferenceSession.create(modelData, { executionProviders: [providWebGLWebGPU] });
             inputNames = session["handler"]["inputNames"];
             outputNames = session["handler"]["outputNames"];
             console.log('Create');
@@ -45,22 +58,19 @@ export class Onnx {
             try{
                 const { input, threshold, shape } = e.data;
                 let outputData = {};          
-                console.log(input);
                 let inputData = {};
                 for(var i = 0; i < input.length; i++){
-                  inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);;
+                  inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);
                 }
                 const output = await session.run(inputData);
                 console.log('run');
-                if (threshold != 0){
+                if (threshold != undefined){
                   for(var i = 0; i < outputNames.length; i++) {
                     const data = output[outputNames[i]]["cpuData"];
                     const entries = Object.entries(data);
                     const filteredEntries = entries.filter(([, value]) => value > threshold);
                     filteredEntries.sort(([, valueA], [, valueB]) => valueB - valueA);
                     const sortedObject = Object.fromEntries(filteredEntries);
-
-                    console.log(sortedObject);
                     outputData[outputNames[i]] = sortedObject;
                   }
                 } else {
@@ -72,8 +82,7 @@ export class Onnx {
                     status: 'success',
                     output: outputData,
                 });
-            } catch (e) {
-             console.log(e);
+            } catch (error) {
                 self.postMessage({
                     status: 'error',
                     message: error.toString()
@@ -87,7 +96,8 @@ export class Onnx {
         return await new Promise((resolve, reject) => {
             this.worker.postMessage({
               isRun: false,
-              modelData: mergedArray
+              modelData: mergedArray,
+              providWebGLWebGPU: providWebGLWebGPU
             });
     
 
@@ -117,6 +127,134 @@ export class Onnx {
       }
     }
   }
+
+
+  async testloadWorkerModel(providWebGLWebGPU = "") {
+    if (this.worker != null) {
+      throw new Error("Worker work already");
+    } else {
+    try {
+      
+      const response = await fetch('./mobilenetv2-7.onnx');
+      const data = await response.arrayBuffer();
+      const uint8Array = new Uint8Array(data);
+      console.log(uint8Array.length);
+      const workerCode = `
+      let session;
+      let inputNames;
+      let outputNames;
+      self.onmessage = async function(e) {
+        const { isRun } = e.data;
+        if(isRun == false){
+          console.log("In worker");
+          const { providWebGLWebGPU } = e.data;
+
+          if (providWebGLWebGPU == "webgpu") {
+            self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.webgpu.min.js');
+          } else if (providWebGLWebGPU == "webgl" || providWebGLWebGPU == "wasm" || providWebGLWebGPU == "cpu"){
+            self.importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js');
+          } else {
+            return self.postMessage({
+              status: 'error',
+              message: "Incorrect backend onnx"
+            });
+          }
+
+          ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+          ort.env.wasm.numThreads = 1; 
+
+        try {
+          const { modelData } = e.data;
+          session = await ort.InferenceSession.create(modelData, { executionProviders: [providWebGLWebGPU] });
+          inputNames = session["handler"]["inputNames"];
+          outputNames = session["handler"]["outputNames"];
+          console.log('Create');
+           console.log(session);
+          self.postMessage({
+            status: 'success',
+            inputNames: inputNames,
+            outputNames: outputNames,
+          });
+        } catch (error) {
+          self.postMessage({
+            status: 'error',
+            message: error.toString()
+          });
+        }
+      } else {
+          try{
+              const { input, threshold, shape } = e.data;
+              let outputData = {};          
+              console.log(input.length);
+              let inputData = {};
+              for(var i = 0; i < input.length; i++){
+                inputData[inputNames[i]] = new ort.Tensor(input[i], shape[i]);
+              }
+              const output = await session.run(inputData);
+              console.log('run');
+              if (threshold != undefined){
+                for(var i = 0; i < outputNames.length; i++) {
+                  console.log(output);
+                  const data = output[outputNames[i]]["cpuData"];
+                  const entries = Object.entries(data);
+                  const filteredEntries = entries.filter(([, value]) => value > threshold);
+                  filteredEntries.sort(([, valueA], [, valueB]) => valueB - valueA);
+                  const sortedObject = Object.fromEntries(filteredEntries);
+                  outputData[outputNames[i]] = sortedObject;
+                }
+              } else {
+                for(var i = 0; i < outputNames.length; i++) {
+                  outputData[outputNames[i]] = output[outputNames[i]]["cpuData"];
+                }
+              }
+              self.postMessage({
+                  status: 'success',
+                  output: outputData,
+              });
+          } catch (error) {
+              self.postMessage({
+                  status: 'error',
+                  message: error.toString()
+              });
+          }
+          }
+      };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+     this.worker = new Worker(URL.createObjectURL(blob));
+      return await new Promise((resolve, reject) => {
+          this.worker.postMessage({
+            isRun: false,
+            modelData: uint8Array,
+            providWebGLWebGPU: providWebGLWebGPU
+          });
+  
+          this.worker.onmessage = function(e) {
+          const { status, inputNames, outputNames, message } = e.data;
+  
+          if (status === 'success') {
+            console.log('ONNX Session created successfully');
+            console.log('Input Names:', inputNames);
+            console.log('Output Names:', outputNames);
+            resolve({ res: JSON.stringify({inputNames, outputNames})});
+          } else if (status === 'error') {
+            console.error('Error creating ONNX Session:', message);
+            reject(new Error('Error creating ONNX Session:' + message));
+          }
+        };
+  
+        this.worker.onerror = function(error) {
+          console.error('Error in worker:', error.message);
+          reject(error);
+        };
+      });
+    } catch (e) {
+      this.worker = null;
+      console.error(`Error in load ONNX Worker: ${e.message}`);
+      throw new Error(`Error in load ONNX Worker: ${e.message}`);
+    }
+  }
+}
 
 
   async runModel(inputsDatajson, shape, typeInputData ,threshold = undefined) {
@@ -209,7 +347,7 @@ export class Onnx {
 }
 
 
-    async createSessionBuffer(numThreads = 1){
+    async createSessionBuffer(numThreads = 1, providWebGLWebGPU = ""){
       this.numThreads = numThreads;
       if(this.modelBuffer.length != 0){
         try{
@@ -225,7 +363,7 @@ export class Onnx {
             this.modelBuffer = [];
             totalLength = null;
             offset = null;
-            var res = await this.loadWorkerModel(mergedArray, numThreads);
+            var res = await this.loadWorkerModel(mergedArray, numThreads, providWebGLWebGPU);
             return res.res;
         }catch(e){
             return JSON.stringify({error: `${e}`});

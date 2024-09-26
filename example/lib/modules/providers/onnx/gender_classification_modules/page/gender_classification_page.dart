@@ -44,6 +44,7 @@ class _GenderClassificationPageState extends State<GenderClassificationPage> {
     return await _aiModelLand.loadModel(
         request: OnnxRequestModel(
           loadModelWay: LoadModelWay.fromAssets,
+          onnxBackend: ONNXBackend.cpu,
           onProgressUpdate: (double newProgress) {
             setState(() {
               percentNotifier.value = newProgress;

@@ -33,8 +33,12 @@ class ONNX implements ProviderAiService {
   Future<bool> addModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
-      // percentNotifier.value = 0;
       final onnxRequest = request as OnnxRequestModel;
+
+      if (onnxRequest.onnxBackend == null) {
+        throw Exception("ONNX backend not found");
+      }
+
       if (onnxRequest.loadModelWay != null) {
         switch (onnxRequest.loadModelWay) {
           case LoadModelWay.fromFile:
@@ -45,7 +49,8 @@ class ONNX implements ProviderAiService {
                 return await loadModelCreateSession(
                     modelBuffer: file.readAsBytesSync(),
                     numThreads: onnxRequest.numThreads,
-                    onProgressUpdate: onnxRequest.onProgressUpdate);
+                    onProgressUpdate: onnxRequest.onProgressUpdate,
+                    onnxBackend: onnxRequest.onnxBackend!);
               } else {
                 throw Exception("File not exist");
               }
@@ -58,7 +63,8 @@ class ONNX implements ProviderAiService {
               return await loadModelCreateSession(
                   modelBuffer: modelBuffer,
                   numThreads: onnxRequest.numThreads,
-                  onProgressUpdate: onnxRequest.onProgressUpdate);
+                  onProgressUpdate: onnxRequest.onProgressUpdate,
+                  onnxBackend: onnxRequest.onnxBackend!);
             }
           case LoadModelWay.fromBuffer:
             {
@@ -67,7 +73,8 @@ class ONNX implements ProviderAiService {
                 return await loadModelCreateSession(
                     modelBuffer: onnxRequest.uint8list,
                     numThreads: onnxRequest.numThreads,
-                    onProgressUpdate: onnxRequest.onProgressUpdate);
+                    onProgressUpdate: onnxRequest.onProgressUpdate,
+                    onnxBackend: onnxRequest.onnxBackend!);
               } else {
                 throw Exception("Buffer not found");
               }
@@ -89,15 +96,16 @@ class ONNX implements ProviderAiService {
   Future<bool> loadModelCreateSession(
       {required modelBuffer,
       int? numThreads,
-      Function(double)? onProgressUpdate}) async {
+      Function(double)? onProgressUpdate,
+      required ONNXBackend onnxBackend}) async {
     //numThreads recommend 1(by default 1)
     final isLoad = await loadOnWeb(
         byts: modelBuffer,
         callFunction: "window.onnx.receiveChunk",
         onProgressUpdate: onProgressUpdate);
     if (isLoad == true) {
-      final session = await jsVMService
-          .callJSAsync("window.onnx.createSessionBuffer($numThreads)");
+      final session = await jsVMService.callJSAsync(
+          "window.onnx.createSessionBuffer($numThreads, '${onnxBackend.toString().split(".").last}')");
       Map<String, dynamic> res = await jsonDecode(session);
       if (res.containsKey("error")) {
         throw Exception("Error: ${res["error"]}");
@@ -160,8 +168,11 @@ class ONNX implements ProviderAiService {
       throw Exception("Model data not found");
     }
     try {
+      final onnxRequest = request as OnnxRequestModel;
       final isLoad = await loadOnWeb(
-          byts: modelByts!, callFunction: "window.onnx.receiveChunk");
+          byts: modelByts!,
+          callFunction: "window.onnx.receiveChunk",
+          onProgressUpdate: onnxRequest.onProgressUpdate);
       ;
       if (isLoad == true) {
         final restartResponse =
@@ -250,5 +261,32 @@ class ONNX implements ProviderAiService {
     } catch (e) {
       throw Exception("Model wasn`t stop: $e");
     }
+  }
+
+  Future<Map<String, bool>> checkWebGLAndWebGPU() async {
+    const String webGLCheck = """
+      (function() {
+        try {
+          var canvas = document.createElement('canvas');
+          return !!window.WebGLRenderingContext && !!canvas.getContext('webgl');
+        } catch(e) {
+          return false;
+        }
+      })();
+    """;
+
+    const String webGPUCheck = """
+      (function() {
+        return !!navigator.gpu;
+      })();
+    """;
+
+    final webGLSupported = await jsVMService.callJS(webGLCheck) as bool;
+    final webGPUSupported = await jsVMService.callJS(webGPUCheck) as bool;
+
+    return {
+      "WebGL": webGLSupported,
+      "WebGPU": webGPUSupported,
+    };
   }
 }
