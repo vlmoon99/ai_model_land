@@ -387,13 +387,13 @@ export class Onnx {
       }
     }
 
-    async restartModel(){
+    async restartModel(providWebGLWebGPU){
       if(this.worker == null) {
         throw JSON.stringify({error: new Error("Model not loaded")});
       }
       await this.worker.terminate();
       this.worker = null;
-      var res = await this.createSessionBuffer(this.numThreads);
+      var res = await this.createSessionBuffer(this.numThreads, providWebGLWebGPU);
       if (res["error"] == null) {
         return JSON.stringify({res: true});
       } else {

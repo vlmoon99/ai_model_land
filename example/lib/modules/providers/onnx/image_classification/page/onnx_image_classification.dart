@@ -7,6 +7,7 @@ import 'package:ai_model_land/models/providers/onnx/onnx_request_model.dart';
 import 'package:ai_model_land/models/providers/onnx/onnx_respons_model.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
+import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
 import 'package:ai_model_land_example/thems/thems.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:file_picker/file_picker.dart';
@@ -31,6 +32,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
   bool? isModelLoaded;
   Future<bool>? restartStop;
   Future<List<String>>? predict;
+  ONNXBackend? backendONNX;
   final ValueNotifier<double> percentNotifier = ValueNotifier<double>(0.0);
 
   BaseModel baseModel = BaseModel(
@@ -39,11 +41,11 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
       format: ModelFormat.onnx,
       sourceType: ModelSourceType.local);
 
-  Future<bool> loadModel() async {
+  Future<bool> loadModel({required ONNXBackend onnxBackendnx}) async {
     return await _aiModelLand.loadModel(
         request: OnnxRequestModel(
           loadModelWay: LoadModelWay.fromAssets,
-          onnxBackend: ONNXBackend.cpu,
+          onnxBackend: onnxBackendnx,
           onProgressUpdate: (double newProgress) {
             setState(() {
               percentNotifier.value = newProgress;
@@ -108,14 +110,74 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
     }
   }
 
+  Future<bool> _showRunModelDialog({required BuildContext context}) async {
+    ONNXBackend? selectedModelType = ONNXBackend.cpu;
+
+    final supportBackend = await _aiModelLand.webBackendSupport();
+    List<String> support = supportBackend.entries
+        .where((entris) => entris.value == false)
+        .map((entris) => entris.key)
+        .toList();
+
+    final filteredModelTypes = ONNXBackend.values
+        .where((type) => !support.contains(type.toString().split(".").last))
+        .toList();
+
+    final ONNXBackend? backendForONNX = await showDialog<ONNXBackend>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm load model'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Select a backend for onnx:'),
+              DropdownButton<ONNXBackend>(
+                value: selectedModelType,
+                items: filteredModelTypes.map((ONNXBackend type) {
+                  return DropdownMenuItem<ONNXBackend>(
+                    value: type,
+                    child: Text(type.name),
+                  );
+                }).toList(),
+                onChanged: (ONNXBackend? newValue) {
+                  if (newValue != null) {
+                    selectedModelType = newValue;
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            CustomButton(
+                onPressed: () {
+                  Navigator.of(context).pop(selectedModelType);
+                },
+                text: "Load model"),
+          ],
+        );
+      },
+    );
+    if (backendForONNX != null) {
+      setState(() {
+        backendONNX = backendForONNX;
+      });
+      final load = await loadModel(onnxBackendnx: backendForONNX);
+      return load;
+    } else {
+      throw Exception("What went wrong, try again.");
+    }
+  }
+
   Future<bool> stopModel() async {
     await _aiModelLand.stopModel(baseModel: baseModel);
     return Future.value(true);
   }
 
-  Future<bool> restartModel() async {
+  Future<bool> restartModel({required ONNXBackend backendONNX}) async {
     await _aiModelLand.restartModel(
-        request: OnnxRequestModel(), baseModel: baseModel);
+        request: OnnxRequestModel(onnxBackend: backendONNX),
+        baseModel: baseModel);
     return Future.value(true);
   }
 
@@ -174,7 +236,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                         FilledButton(
                             onPressed: () async {
                               setState(() {
-                                isLoad = loadModel();
+                                isLoad = _showRunModelDialog(context: context);
                               });
                               final res = await isLoad;
                               setState(() {
@@ -342,6 +404,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                               child: FilledButton(
                                 onPressed: () {
                                   setState(() {
+                                    backendONNX = null;
                                     restartStop = stopModel();
                                   });
                                   isModelLoaded = false;
@@ -357,9 +420,12 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
                             Flexible(
                               child: FilledButton(
                                 onPressed: () {
-                                  setState(() {
-                                    restartStop = restartModel();
-                                  });
+                                  if (backendONNX != null) {
+                                    setState(() {
+                                      restartStop = restartModel(
+                                          backendONNX: backendONNX!);
+                                    });
+                                  }
                                 },
                                 style: Thems.buttonStyle,
                                 child: Text(

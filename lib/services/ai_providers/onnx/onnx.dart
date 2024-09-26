@@ -169,14 +169,17 @@ class ONNX implements ProviderAiService {
     }
     try {
       final onnxRequest = request as OnnxRequestModel;
+      if (onnxRequest.onnxBackend == null) {
+        throw Exception("ONNX backend not found");
+      }
       final isLoad = await loadOnWeb(
           byts: modelByts!,
           callFunction: "window.onnx.receiveChunk",
           onProgressUpdate: onnxRequest.onProgressUpdate);
       ;
       if (isLoad == true) {
-        final restartResponse =
-            await jsVMService.callJSAsync("window.onnx.restartModel()");
+        final restartResponse = await jsVMService.callJSAsync(
+            "window.onnx.restartModel('${onnxRequest.onnxBackend.toString().split(".").last}')");
         Map<String, dynamic> res = jsonDecode(restartResponse);
 
         if (res.containsKey("error")) {
@@ -285,8 +288,8 @@ class ONNX implements ProviderAiService {
     final webGPUSupported = await jsVMService.callJS(webGPUCheck) as bool;
 
     return {
-      "WebGL": webGLSupported,
-      "WebGPU": webGPUSupported,
+      "webgl": webGLSupported,
+      "webgpu": webGPUSupported,
     };
   }
 }
