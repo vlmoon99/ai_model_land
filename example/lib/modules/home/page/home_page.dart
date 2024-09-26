@@ -161,10 +161,10 @@ class _HomePageState extends State<HomePage> {
                               return Column(
                                 children: [
                                   Text(
-                                    "WebGL: ${snapshot.data!["WebGL"]}",
+                                    "WebGL: ${snapshot.data!["webgl"]}",
                                     style: Thems.textStyle,
                                   ),
-                                  Text("WebGPU: ${snapshot.data!["WebGPU"]}",
+                                  Text("WebGPU: ${snapshot.data!["webgpu"]}",
                                       style: Thems.textStyle),
                                 ],
                               );

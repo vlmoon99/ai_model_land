@@ -115,13 +115,15 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
 
     final supportBackend = await _aiModelLand.webBackendSupport();
     List<String> support = supportBackend.entries
-        .where((entris) => entris.value == false)
+        .where((entris) => entris.value == true)
         .map((entris) => entris.key)
         .toList();
 
     final filteredModelTypes = ONNXBackend.values
-        .where((type) => !support.contains(type.toString().split(".").last))
+        .where((type) => support.contains(type.toString().split(".").last))
         .toList();
+
+    filteredModelTypes.addAll([ONNXBackend.cpu, ONNXBackend.wasm]);
 
     final ONNXBackend? backendForONNX = await showDialog<ONNXBackend>(
       context: context,
