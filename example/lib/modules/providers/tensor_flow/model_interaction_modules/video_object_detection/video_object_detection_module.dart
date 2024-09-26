@@ -11,8 +11,7 @@ class TFVideoObjectDetection extends Module {
   void routes(r) {
     r.child(Routes.providersInteractions.init,
         child: (context) => TFVideoObjectDetectionPage());
-    r.child(Routes.providersInteractions.videoObjectDetection + "-page",
-        child: (context) {
+    r.child(Routes.providersInteractions.init + "video-page", child: (context) {
       final args = Modular.args.data as Map<String, dynamic>;
       final baseModel = args['baseModel'];
       final labels = args['labels'];

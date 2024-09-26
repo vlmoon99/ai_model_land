@@ -151,7 +151,7 @@ class TF_VideoObjectDetectionPageState
                       ? CustomButton(
                           onPressed: () {
                             Modular.to.pushNamed(
-                                '/home/tensorFlow/video-object-detection/video-object-detection-page',
+                                '//home/tensorFlow/video-object-detection/video-page',
                                 arguments: {
                                   "baseModel": baseModel,
                                   "labels":

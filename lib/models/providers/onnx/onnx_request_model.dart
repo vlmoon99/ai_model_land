@@ -31,8 +31,6 @@ class OnnxRequestModel implements TaskRequestModel {
 
   String? pathToAsset;
 
-  int? pointerAddress;
-
   double? threshold;
 
   List<List<int>>? shape;
@@ -45,6 +43,8 @@ class OnnxRequestModel implements TaskRequestModel {
 
   Function(double)? onProgressUpdate;
 
+  ONNXBackend? onnxBackend;
+
   OnnxRequestModel(
       {this.data,
       this.dataMulti,
@@ -55,12 +55,14 @@ class OnnxRequestModel implements TaskRequestModel {
       this.uint64list,
       this.uint8list,
       this.loadModelFilePath,
-      this.pointerAddress,
       this.threshold,
       this.pathToAsset,
       this.shape,
       this.typeInputData,
       this.numThreads,
       this.topPredictEntries,
-      this.onProgressUpdate});
+      this.onProgressUpdate,
+      this.onnxBackend});
 }
+
+enum ONNXBackend { webgl, webgpu, cpu, wasm }

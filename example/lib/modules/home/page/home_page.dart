@@ -22,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   String _platformVersion = 'Unknown';
   Future<List<BaseModel>>? _modelsLocal;
   Future<Map<String, dynamic>>? posibilitis;
+  Future<Map<String, bool>>? supportBackendWEB;
   Future<List<BaseModel>> seeLocal() async {
     return await _aiModelLand.readAll();
   }
@@ -42,6 +43,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<Map<String, bool>> webBackendSupport() async {
+    return await _aiModelLand.webBackendSupport();
+  }
+
   Future<Map<String, dynamic>>
       checkPlatformGPUAcceleratorPossibilities() async {
     return await _aiModelLand.checkPlatformGPUAcceleratorPossibilities();
@@ -51,6 +56,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _modelsLocal = seeLocal();
+    supportBackendWEB = webBackendSupport();
     initPlatformState();
     posibilitis = checkPlatformGPUAcceleratorPossibilities();
   }
@@ -129,6 +135,38 @@ class _HomePageState extends State<HomePage> {
                                       "${entris.key}: ${entris.value}",
                                       style: Thems.textStyle);
                                 }).toList(),
+                              );
+                            } else {
+                              return Center(
+                                  child: Text(
+                                'No data available',
+                                style: Thems.textStyle,
+                              ));
+                            }
+                          },
+                        ),
+                  supportBackendWEB == null
+                      ? Container()
+                      : FutureBuilder<Map<String, bool>>(
+                          future: supportBackendWEB,
+                          builder: (BuildContext context,
+                              AsyncSnapshot<Map<String, bool>> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return SelectableText('Error: ${snapshot.error}');
+                            } else if (snapshot.hasData) {
+                              return Column(
+                                children: [
+                                  Text(
+                                    "WebGL: ${snapshot.data!["WebGL"]}",
+                                    style: Thems.textStyle,
+                                  ),
+                                  Text("WebGPU: ${snapshot.data!["WebGPU"]}",
+                                      style: Thems.textStyle),
+                                ],
                               );
                             } else {
                               return Center(

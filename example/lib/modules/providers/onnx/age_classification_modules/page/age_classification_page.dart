@@ -43,6 +43,7 @@ class _AgeClassificationPageState extends State<AgeClassificationPage> {
     return await _aiModelLand.loadModel(
         request: OnnxRequestModel(
           loadModelWay: LoadModelWay.fromAssets,
+          onnxBackend: ONNXBackend.cpu,
           onProgressUpdate: (double newProgress) {
             setState(() {
               percentNotifier.value = newProgress;

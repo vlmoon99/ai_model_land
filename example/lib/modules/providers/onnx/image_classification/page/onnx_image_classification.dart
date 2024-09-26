@@ -43,6 +43,7 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
     return await _aiModelLand.loadModel(
         request: OnnxRequestModel(
           loadModelWay: LoadModelWay.fromAssets,
+          onnxBackend: ONNXBackend.cpu,
           onProgressUpdate: (double newProgress) {
             setState(() {
               percentNotifier.value = newProgress;
