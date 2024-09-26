@@ -128,38 +128,45 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
     final ONNXBackend? backendForONNX = await showDialog<ONNXBackend>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm load model'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Select a backend for onnx:'),
-              DropdownButton<ONNXBackend>(
-                value: selectedModelType,
-                items: filteredModelTypes.map((ONNXBackend type) {
-                  return DropdownMenuItem<ONNXBackend>(
-                    value: type,
-                    child: Text(type.name),
-                  );
-                }).toList(),
-                onChanged: (ONNXBackend? newValue) {
-                  if (newValue != null) {
-                    selectedModelType = newValue;
-                  }
-                },
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Confirm load model'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Select a backend for onnx:'),
+                  DropdownButton<ONNXBackend>(
+                    value: selectedModelType,
+                    items: filteredModelTypes.map((ONNXBackend type) {
+                      return DropdownMenuItem<ONNXBackend>(
+                        value: type,
+                        child: Text(type.name),
+                      );
+                    }).toList(),
+                    onChanged: (ONNXBackend? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedModelType = newValue;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
-          actions: <Widget>[
-            CustomButton(
-                onPressed: () {
-                  Navigator.of(context).pop(selectedModelType);
-                },
-                text: "Load model"),
-          ],
+              actions: <Widget>[
+                CustomButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(selectedModelType);
+                    },
+                    text: "Load model"),
+              ],
+            );
+          },
         );
       },
     );
+
     if (backendForONNX != null) {
       setState(() {
         backendONNX = backendForONNX;
