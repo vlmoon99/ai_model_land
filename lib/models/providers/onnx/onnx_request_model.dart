@@ -13,15 +13,6 @@ class OnnxRequestModel implements TaskRequestModel {
   String? labelsFile;
 
   @override
-  Uint16List? uint16list;
-
-  @override
-  Uint32List? uint32list;
-
-  @override
-  Uint64List? uint64list;
-
-  @override
   Uint8List? uint8list;
 
   @override
@@ -50,9 +41,6 @@ class OnnxRequestModel implements TaskRequestModel {
       this.dataMulti,
       this.labelsFile,
       this.loadModelWay,
-      this.uint16list,
-      this.uint32list,
-      this.uint64list,
       this.uint8list,
       this.loadModelFilePath,
       this.threshold,

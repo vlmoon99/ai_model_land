@@ -10,7 +10,7 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     //Catch Errors caught by Flutter
-    initFlutterChainLib();
+    initAIModelLandLib();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       //TODO add catcher

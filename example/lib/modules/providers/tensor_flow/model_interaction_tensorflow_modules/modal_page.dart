@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/providers/tensor_flow/tensorflow_respons_model.dart';
-import 'package:ai_model_land_example/modules/providers/tensor_flow/model_interaction_modules/video_object_detection/pages/object_detection_camera_page.dart';
+import 'package:ai_model_land_example/modules/providers/tensor_flow/model_interaction_tensorflow_modules/video_object_detection/pages/object_detection_camera_page.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/utils/utils.dart';
 import 'package:flutter_modular/flutter_modular.dart';
