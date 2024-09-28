@@ -6,7 +6,7 @@ final InAppLocalhostServer? localhostServer = kIsWeb
     ? null
     : InAppLocalhostServer(documentRoot: WebViewConstants.documentRoot);
 
-Future<void> initFlutterChainLib() async {
+Future<void> initAIModelLandLib() async {
   if (!kIsWeb) {
     await localhostServer?.start();
   }

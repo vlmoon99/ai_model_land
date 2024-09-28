@@ -7,15 +7,12 @@ class TensorFlowRequestModel implements TaskRequestModel {
 
   bool? async;
 
-  @override
   Uint16List? uint16list;
 
   Float32List? float32list;
 
-  @override
   Uint32List? uint32list;
 
-  @override
   Uint64List? uint64list;
 
   @override
