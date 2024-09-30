@@ -109,8 +109,8 @@ Then you can reuse this `BaseModel` in all functions for each AI provider.
 
 You can check how to use all functions for each AI provider by the following links:
 
-- ONNXRUNTIME
-- TensorFlow Lite
+- [ONNXRUNTIME](./documentation/ONNXRUNTIME%20guide.md)
+- [TensorFlow Lite](./documentation/TensoreFlow%20guide.md)
 
 **Example of using the AIModelLand library:**
 
@@ -140,11 +140,20 @@ OnnxResponsModel predict = await aiModelLand.runTaskOnTheModel(
 
 //restart model
 await aiModelLand.restartModel(
-        request: OnnxRequestModel(onnxBackend: ONNXBackend.cpu),
+        request: OnnxRequestModel(
+        loadModelWay: LoadModelWay.fromAssets,
+        onnxBackend: ONNXBackend.cpu),
         baseModel: baseModel);
 
 //stop model
 await aiModelLand.stopModel(baseModel: baseModel);
+
+
+//delete model from device
+await aiModelLand.deleteModelFromDevice(baseModel: baseModel);
+
+//you can check information about device
+await aiModelLand.checkPlatformInfo();
 ```
 
 ## **Running Examples**

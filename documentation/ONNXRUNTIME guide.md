@@ -22,7 +22,7 @@ Map<String, bool> supportBackend = await onnxruntime.webBackendSupport();
 
 ## **Base model**
 
-In this step, we need to create information about the model. You can check how to create a base model [here]. When creating the base model, we need to choose `ModelFormat.onnx`.
+In this step, we need to create information about the model. You can check how to create a base model [here](../README.md#how-to-use). When creating the base model, we need to choose `ModelFormat.onnx`.
 
 **Example**:
 
@@ -83,7 +83,7 @@ You need to input:
 - `dataMulti`: a list with input Tensor data.
 - `shape`: a list with the shape for the input Tensor.
 
-**Important**: The data in `dataMulti` and `shape` should correspond to each other. For example, if we have two inputs for the Tensor, we create `dataMulti` with two data items, and the shape must match the data (shape for data in `dataMulti[0]` must locates in `shape` on index 0).
+**Important**: The data in `dataMulti` and `shape` should correspond to each other. For example, if we have two inputs for the Tensor, we create `dataMulti` with two data items, and the shape must match the data (shape for data in `dataMulti[0]` must locates in `shape` on index 0). If you have problem with `typeInputData` you can enter it yourself the same way.
 
 Optional parameters:
 
@@ -107,7 +107,7 @@ OnnxResponsModel predict = await onnxruntime.runTaskOnTheModel(
 
 ## **Stop model**
 
-If we need to stop the model, we can use the `stopModel` function.
+If we need to stop the model, we can use the `stopModel` function. Return `bool` value.
 
 **Example**:
 
@@ -119,14 +119,18 @@ await onnxruntime.stopModel();
 
 If you need to reload the model, you can use the `restartModel` function with the following parameters:
 
-- `request`: an instance of `OnnxRequestModel` with the `onnxBackend` specified, and an optional `onProgressUpdate` callback (similar to the one in the `addModel` function).
-- Base model.
+- `request`: an instance of `OnnxRequestModel` with similar to the `addModel` function.
+- Base model.<br>
+
+Return `bool` value.
 
 **Example**:
 
 ```dart
 await onnxruntime.restartModel(
-    request: OnnxRequestModel(onnxBackend: ONNXBackend.cpu),
+    request: OnnxRequestModel(
+        loadModelWay: LoadModelWay.fromAssets,
+        onnxBackend: ONNXBackend.cpu),
     baseModel: baseModel
 );
 ```

@@ -18,7 +18,6 @@ import '../../../models/providers/onnx/onnx_respons_model.dart';
 class ONNX implements ProviderAiService {
   List<dynamic>? inputNames;
   List<dynamic>? outputNames;
-  Uint8List? modelByts;
 
   JsVMService jsVMService;
   ONNX({required this.jsVMService}) {}
@@ -45,9 +44,9 @@ class ONNX implements ProviderAiService {
             {
               final file = File(baseModel.source);
               if (await file.exists()) {
-                modelByts = file.readAsBytesSync();
+                Uint8List modelBuffer = file.readAsBytesSync();
                 return await loadModelCreateSession(
-                    modelBuffer: file.readAsBytesSync(),
+                    modelBuffer: modelBuffer,
                     numThreads: onnxRequest.numThreads,
                     onProgressUpdate: onnxRequest.onProgressUpdate,
                     onnxBackend: onnxRequest.onnxBackend!);
@@ -59,7 +58,6 @@ class ONNX implements ProviderAiService {
             {
               final byteData = await rootBundle.load(baseModel.source);
               Uint8List modelBuffer = byteData.buffer.asUint8List();
-              modelByts = modelBuffer;
               return await loadModelCreateSession(
                   modelBuffer: modelBuffer,
                   numThreads: onnxRequest.numThreads,
@@ -69,9 +67,9 @@ class ONNX implements ProviderAiService {
           case LoadModelWay.fromBuffer:
             {
               if (onnxRequest.uint8list != null) {
-                modelByts = onnxRequest.uint8list;
+                Uint8List modelBuffer = onnxRequest.uint8list!;
                 return await loadModelCreateSession(
-                    modelBuffer: onnxRequest.uint8list,
+                    modelBuffer: modelBuffer,
                     numThreads: onnxRequest.numThreads,
                     onProgressUpdate: onnxRequest.onProgressUpdate,
                     onnxBackend: onnxRequest.onnxBackend!);
@@ -144,17 +142,6 @@ class ONNX implements ProviderAiService {
   }
 
   @override
-  void checkPlatformGPUAcceleratorPossibilities(String params) {
-    // TODO: implement checkPlatformGPUAcceleratorPossibilities
-  }
-
-  @override
-  Future deleteModel() {
-    // TODO: implement deleteModel
-    throw UnimplementedError();
-  }
-
-  @override
   Future<bool> isModelLoaded() async {
     final isload = await jsVMService.callJS("window.onnx.isModelLoaded()");
     Map<String, dynamic> res = jsonDecode(isload);
@@ -162,32 +149,20 @@ class ONNX implements ProviderAiService {
   }
 
   @override
-  Future restartModel(
+  Future<bool> restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
-    if (modelByts == null) {
-      throw Exception("Model data not found");
-    }
     try {
-      final onnxRequest = request as OnnxRequestModel;
-      if (onnxRequest.onnxBackend == null) {
-        throw Exception("ONNX backend not found");
-      }
-      final isLoad = await loadOnWeb(
-          byts: modelByts!,
-          callFunction: "window.onnx.receiveChunk",
-          onProgressUpdate: onnxRequest.onProgressUpdate);
-      ;
-      if (isLoad == true) {
-        final restartResponse = await jsVMService.callJSAsync(
-            "window.onnx.restartModel('${onnxRequest.onnxBackend.toString().split(".").last}')");
-        Map<String, dynamic> res = jsonDecode(restartResponse);
-
-        if (res.containsKey("error")) {
-          throw Exception("${res["error"]}");
-        }
-        print('Model restart successful');
+      final isStop = await this.stopModel();
+      if (isStop != true) {
+        return false;
       } else {
-        throw Exception("Model wasn`t load");
+        final isLoad =
+            await this.addModel(request: request, baseModel: baseModel);
+        if (isLoad != true) {
+          return false;
+        } else {
+          return true;
+        }
       }
     } catch (e) {
       throw Exception("$e");
@@ -251,7 +226,7 @@ class ONNX implements ProviderAiService {
   }
 
   @override
-  Future stopModel() async {
+  Future<bool> stopModel() async {
     try {
       final stopeSession =
           await jsVMService.callJSAsync("window.onnx.stopModel()");
@@ -259,8 +234,8 @@ class ONNX implements ProviderAiService {
       if (res.containsKey("error")) {
         throw Exception("${res["error"]}");
       }
-      modelByts = null;
       print('Model was close successful');
+      return true;
     } catch (e) {
       throw Exception("Model wasn`t stop: $e");
     }

@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<Map<String, dynamic>>
       checkPlatformGPUAcceleratorPossibilities() async {
-    return await _aiModelLand.checkPlatformGPUAcceleratorPossibilities();
+    return await _aiModelLand.checkPlatformInfo();
   }
 
   @override

@@ -10,7 +10,7 @@ final tensorFlow = TensorFlowLiteIO.defaultInstance();
 
 ## **Base model**
 
-In this step, we need to create information about the model. How to create a base model, you can check here. When creating the base model, we need to choose `ModelFormat.tflite`.
+In this step, we need to create information about the model. How to create a base model, you can check [here](../README.md#how-to-use). When creating the base model, we need to choose `ModelFormat.tflite`.
 
 ```dart
 BaseModel baseModel = BaseModel(
@@ -76,7 +76,7 @@ TensorFlowResponseModel output = await tensorFlow.runTaskOnTheModel(
 
 ## **Stop model**
 
-If we need to stop the model, we can use the `stopModel` function.
+If we need to stop the model, we can use the `stopModel` function. Return `bool` value.
 
 ```dart
 await tensorFlow.stopModel();
@@ -86,8 +86,10 @@ await tensorFlow.stopModel();
 
 If we need to reload the model, we can use the `restartModel` function with the following parameters:
 
-- `request` – `TensorFlowRequestModel` with the same parameters as in `addModel`.
-- Base model.
+- `request` – `TensorFlowRequestModel` with the same parameters as in [addModel](#add-model).<br>
+- Base model.<br>
+
+Return `bool` value.
 
 ```dart
 await tensorFlow.restartModel(

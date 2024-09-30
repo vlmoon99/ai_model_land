@@ -47,9 +47,8 @@ class AiService {
   }
 
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
-    return await platformInfo.checkPlatformGPUAcceleratorPossibilities();
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
+    return await platformInfo.checkPlatformInfo();
   }
 
   Future<bool> loadModelToProvider(
@@ -62,7 +61,7 @@ class AiService {
         .addModel(request: request, baseModel: baseModel);
   }
 
-  Future<void> stopModel({required BaseModel baseModel}) async {
+  Future<bool> stopModel({required BaseModel baseModel}) async {
     if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
@@ -70,7 +69,7 @@ class AiService {
     if (baseModel.format == null) {
       throw Exception('Incorrect Base Model');
     }
-    await providerService[baseModel.format]!.stopModel();
+    return await providerService[baseModel.format]!.stopModel();
   }
 
   Future<BaseModel> downloadFileToAppDir({required BaseModel baseModel}) async {
@@ -86,16 +85,17 @@ class AiService {
     }
   }
 
-  Future<void> deleteModel({required BaseModel baseModel}) async {
-    await networkInteraction.deleteModel(model: baseModel);
+  Future<bool> deleteModel({required BaseModel baseModel}) async {
+    final isdelete = await networkInteraction.deleteModel(model: baseModel);
+    return isdelete;
   }
 
-  Future<void> restartModel(
+  Future<bool> restartModel(
       {required BaseModel baseModel, required TaskRequestModel request}) async {
     if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
-    await providerService[baseModel.format]!
+    return await providerService[baseModel.format]!
         .restartModel(request: request, baseModel: baseModel);
   }
 

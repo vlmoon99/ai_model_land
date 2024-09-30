@@ -15,9 +15,8 @@ class GlobalVM {
 
   final AiModelLandLib _aiModelLand = Modular.get(key: 'AIModelLib');
 
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
-    return await _aiModelLand.checkPlatformGPUAcceleratorPossibilities();
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
+    return await _aiModelLand.checkPlatformInfo();
   }
 
   Future<List<BaseModel>> readAll() async {
@@ -33,14 +32,13 @@ class GlobalVM {
     return await _aiModelLand.loadModel(request: request, baseModel: baseModel);
   }
 
-  Future<void> deleteModel(
+  Future<bool> deleteModelFromDevice(
       {required BaseModel baseModel, required bool fromDevice}) async {
-    await _aiModelLand.deleteModel(
-        baseModel: baseModel, fromDevice: fromDevice);
+    return await _aiModelLand.deleteModelFromDevice(baseModel: baseModel);
   }
 
-  Future<void> stopModel({required BaseModel baseModel}) async {
-    await _aiModelLand.stopModel(baseModel: baseModel);
+  Future<bool> stopModel({required BaseModel baseModel}) async {
+    return await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
   Future<bool> isModelLoaded({required BaseModel baseModel}) async {
@@ -53,9 +51,10 @@ class GlobalVM {
         request: request, baseModel: baseModel);
   }
 
-  Future<void> restartModel(
+  Future<bool> restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
-    await _aiModelLand.restartModel(baseModel: baseModel, request: request);
+    return await _aiModelLand.restartModel(
+        baseModel: baseModel, request: request);
   }
 
   Future<Map<String, bool>> webBackendSupport() async {

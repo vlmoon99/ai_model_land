@@ -12,14 +12,17 @@ class NetworkService {
   factory NetworkService.defaultInstance() {
     return NetworkService(dio: Dio());
   }
-  Future<void> deleteModel({required BaseModel model}) async {
+  Future<bool> deleteModel({required BaseModel model}) async {
     final fileOnDevice = File('${model.source}');
     if (await fileOnDevice.exists()) {
       try {
         await fileOnDevice.delete();
+        return true;
       } catch (e) {
         throw Exception("$e");
       }
+    } else {
+      throw Exception("File not exist");
     }
   }
 

@@ -179,15 +179,14 @@ class _OnnxImageClassificationState extends State<OnnxImageClassification> {
   }
 
   Future<bool> stopModel() async {
-    await _aiModelLand.stopModel(baseModel: baseModel);
-    return Future.value(true);
+    return await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
   Future<bool> restartModel({required ONNXBackend backendONNX}) async {
-    await _aiModelLand.restartModel(
-        request: OnnxRequestModel(onnxBackend: backendONNX),
+    return await _aiModelLand.restartModel(
+        request: OnnxRequestModel(
+            loadModelWay: LoadModelWay.fromAssets, onnxBackend: backendONNX),
         baseModel: baseModel);
-    return Future.value(true);
   }
 
   void checkModelLoadedStop({required BaseModel baseModel}) async {
