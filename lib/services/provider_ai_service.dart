@@ -6,18 +6,13 @@ abstract class ProviderAiService {
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) =>
       throw UnsupportedError("No implementation");
 
-  void checkPlatformGPUAcceleratorPossibilities(String params) =>
-      throw UnsupportedError("No implementation");
+  Future<bool> stopModel() => throw UnsupportedError("No implementation");
 
-  Future deleteModel() => throw UnsupportedError("No implementation");
-
-  Future stopModel() => throw UnsupportedError("No implementation");
-
-  Future restartModel(
+  Future<bool> restartModel(
           {required TaskRequestModel request, required BaseModel baseModel}) =>
       throw UnsupportedError("No implementation");
 
-  Future addModel(
+  Future<bool> addModel(
           {required TaskRequestModel request, required BaseModel baseModel}) =>
       throw UnsupportedError("No implementation");
 

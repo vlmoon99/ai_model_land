@@ -10,8 +10,7 @@ class PlatformInfo {
     return PlatformInfo(deviceInfo: DeviceInfoPlugin());
   }
 
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
     Map<String, dynamic> deviceData = {};
     if (kIsWeb) {
       WebBrowserInfo info = await deviceInfo.webBrowserInfo;

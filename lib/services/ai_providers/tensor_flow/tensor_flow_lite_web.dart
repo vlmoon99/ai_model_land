@@ -15,16 +15,8 @@ class TensorFlowLiteWeb implements TensorFlowLite {
   }
 
   @override
-  Future addModel(
+  Future<bool> addModel(
       {required TaskRequestModel request, required BaseModel baseModel}) {
-    throw UnsupportedError("No interaction for this os");
-  }
-
-  @override
-  void checkPlatformGPUAcceleratorPossibilities(String params) {}
-
-  @override
-  Future deleteModel() {
     throw UnsupportedError("No interaction for this os");
   }
 
@@ -34,7 +26,7 @@ class TensorFlowLiteWeb implements TensorFlowLite {
   }
 
   @override
-  Future restartModel(
+  Future<bool> restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) {
     throw UnsupportedError("No interaction for this os");
   }
@@ -45,7 +37,7 @@ class TensorFlowLiteWeb implements TensorFlowLite {
   }
 
   @override
-  Future stopModel() {
+  Future<bool> stopModel() {
     throw UnsupportedError("No interaction for this os");
   }
 }

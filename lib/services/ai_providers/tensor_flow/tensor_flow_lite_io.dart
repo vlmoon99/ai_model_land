@@ -127,11 +127,12 @@ class TensorFlowLiteIO implements TensorFlowLite {
   }
 
   @override
-  Future<void> restartModel(
+  Future<bool> restartModel(
       {required TaskRequestModel request, required BaseModel baseModel}) async {
     try {
       await stopModel();
       await addModel(request: request, baseModel: baseModel);
+      return true;
     } catch (e) {
       throw Exception("Model no restart successful: $e");
     }
@@ -251,7 +252,7 @@ class TensorFlowLiteIO implements TensorFlowLite {
   }
 
   @override
-  Future<void> stopModel() async {
+  Future<bool> stopModel() async {
     try {
       if (_isolateInterpreter != null) {
         await _isolateInterpreter!.close();
@@ -264,6 +265,7 @@ class TensorFlowLiteIO implements TensorFlowLite {
       _outputShapes.clear();
       _outputTypes.clear();
       print('Model was close successful');
+      return true;
     } catch (e) {
       throw Exception("Model no close successful: $e");
     }

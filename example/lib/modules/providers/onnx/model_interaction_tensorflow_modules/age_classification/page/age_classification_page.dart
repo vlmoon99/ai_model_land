@@ -190,15 +190,14 @@ class _AgeClassificationPageState extends State<AgeClassificationPage> {
   }
 
   Future<bool> restartModel({required ONNXBackend backendONNX}) async {
-    await _aiModelLand.restartModel(
-        request: OnnxRequestModel(onnxBackend: backendONNX),
+    return await _aiModelLand.restartModel(
+        request: OnnxRequestModel(
+            loadModelWay: LoadModelWay.fromAssets, onnxBackend: backendONNX),
         baseModel: baseModel);
-    return Future.value(true);
   }
 
   Future<bool> stopModel() async {
-    await _aiModelLand.stopModel(baseModel: baseModel);
-    return Future.value(true);
+    return await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
   void checkModelLoadedStop({required BaseModel baseModel}) async {

@@ -24,6 +24,7 @@ Map<String, dynamic> _$BaseModelToJson(BaseModel instance) => <String, dynamic>{
 
 const _$ModelFormatEnumMap = {
   ModelFormat.tflite: 'tflite',
+  ModelFormat.onnx: 'onnx',
 };
 
 const _$ModelSourceTypeEnumMap = {
