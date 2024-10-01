@@ -10,22 +10,26 @@ class PlatformInfo {
     return PlatformInfo(deviceInfo: DeviceInfoPlugin());
   }
 
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
     Map<String, dynamic> deviceData = {};
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        {
-          AndroidDeviceInfo info = await deviceInfo.androidInfo;
-          deviceData['MODEL'] = info.model;
-        }
-      case TargetPlatform.iOS:
-        {
-          IosDeviceInfo info = await deviceInfo.iosInfo;
-          deviceData['MODEL'] = info.model;
-        }
-      default:
-        throw Exception("Your platform is not supported by this library");
+    if (kIsWeb) {
+      WebBrowserInfo info = await deviceInfo.webBrowserInfo;
+      deviceData['App Name'] = info.appName;
+    } else {
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android:
+          {
+            AndroidDeviceInfo info = await deviceInfo.androidInfo;
+            deviceData['MODEL'] = info.model;
+          }
+        case TargetPlatform.iOS:
+          {
+            IosDeviceInfo info = await deviceInfo.iosInfo;
+            deviceData['MODEL'] = info.model;
+          }
+        default:
+          throw Exception("Your platform is not supported by this library");
+      }
     }
 
     return deviceData;

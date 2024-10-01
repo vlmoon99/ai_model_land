@@ -1,23 +1,25 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:image/image.dart';
 
 class UtilsClass {
   Future<List<List<double>>> tokenizeInputText(
-      {required String text, required String vocabPath}) async {
+      {required String text,
+      required String vocab,
+      required bool isFile}) async {
     final int _sentenceLen = 256;
 
     final String start = '<START>';
     final String pad = '<PAD>';
     final String unk = '<UNKNOWN>';
-    final Map<String, int> _dict = await _loadDictionary(vocabPath: vocabPath);
+    final Map<String, int> _dict =
+        await loadDictionary(vocabulary: vocab, isFile: isFile);
 
-    // Whitespace tokenization
     final toks = text.split(' ');
 
-    // Create a list of length==_sentenceLen filled with the value <pad>
     var vec = List<double>.filled(_sentenceLen, _dict[pad]!.toDouble());
 
     var index = 0;
@@ -25,7 +27,6 @@ class UtilsClass {
       vec[index++] = _dict[start]!.toDouble();
     }
 
-    // For each word in sentence find corresponding index in dict
     for (var tok in toks) {
       if (index > _sentenceLen) {
         break;
@@ -35,12 +36,17 @@ class UtilsClass {
           : _dict[unk]!.toDouble();
     }
 
-    // returning List<List<double>> as our interpreter input tensor expects the shape, [1,256]
     return [vec];
   }
 
-  Future<Map<String, int>> _loadDictionary({required String vocabPath}) async {
-    final vocab = await File('$vocabPath').readAsString();
+  Future<Map<String, int>> loadDictionary(
+      {required String vocabulary, required bool isFile}) async {
+    String vocab;
+    if (isFile == true) {
+      vocab = await File('$vocabulary').readAsString();
+    } else {
+      vocab = vocabulary;
+    }
     var dict = <String, int>{};
     final vocabList = vocab.split('\n');
     for (var i = 0; i < vocabList.length; i++) {
@@ -51,19 +57,82 @@ class UtilsClass {
   }
 
   Uint8List imageToByteListFloat32(
-      img.Image image, int inputSize, double mean, double std) {
+      img.Image image, int inputSize, List<double> mean, List<double> std) {
     var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
     var buffer = Float32List.view(convertedBytes.buffer);
     int pixelIndex = 0;
     for (var i = 0; i < inputSize; i++) {
       for (var j = 0; j < inputSize; j++) {
         var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (pixel.r - mean) / std;
-        buffer[pixelIndex++] = (pixel.g - mean) / std;
-        buffer[pixelIndex++] = (pixel.b - mean) / std;
+        buffer[pixelIndex++] = (pixel.r - mean[0]) / std[0];
+        buffer[pixelIndex++] = (pixel.g - mean[1]) / std[1];
+        buffer[pixelIndex++] = (pixel.b - mean[2]) / std[2];
       }
     }
     return convertedBytes.buffer.asUint8List();
+  }
+
+  Float32List preprocesstest(Uint8List imageData, int width, int height) {
+    int channels = 3;
+    int imageSize = width * height * channels;
+
+    if (imageData.length < imageSize) {
+      throw RangeError(
+          "Image data size is too small for the provided dimensions.");
+    }
+
+    Float32List imgData = Float32List(imageSize);
+
+    int index = 0;
+    for (int c = 0; c < channels; c++) {
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          imgData[index++] =
+              imageData[(h * width + w) * channels + c].toDouble() / 255.0;
+        }
+      }
+    }
+
+    Float32List meanVec = Float32List.fromList([0.485, 0.456, 0.406]);
+    Float32List stddevVec = Float32List.fromList([0.229, 0.224, 0.225]);
+
+    Float32List normImgData = Float32List(imageSize);
+
+    for (int c = 0; c < channels; c++) {
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          int idx = c * width * height + h * width + w;
+          normImgData[idx] = (imgData[idx] - meanVec[c]) / stddevVec[c];
+        }
+      }
+    }
+
+    return normImgData;
+  }
+
+  Float32List preprocessGender(img.Image image) {
+    List<Float32List> transposeChannels =
+        List.generate(3, (i) => Float32List(image.height * image.width));
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        final pixel = image.getPixel(x, y);
+        transposeChannels[0][y * image.width + x] = pixel.b.toDouble();
+        transposeChannels[1][y * image.width + x] = pixel.g.toDouble();
+        transposeChannels[2][y * image.width + x] = pixel.r.toDouble();
+      }
+    }
+
+    List<double> meanVec = [104, 117, 123];
+    Float32List normImgData = Float32List(3 * image.height * image.width);
+
+    for (int c = 0; c < 3; c++) {
+      for (int i = 0; i < image.height * image.width; i++) {
+        normImgData[c * image.height * image.width + i] =
+            transposeChannels[c][i] - meanVec[c];
+      }
+    }
+
+    return normImgData;
   }
 
   static Float64List imageToFloatBuffer(
@@ -98,6 +167,16 @@ class UtilsClass {
     }
 
     return bytes;
+  }
+
+  Future<List<String>> convertFileToList({required String assetsPath}) async {
+    final lablesData = await rootBundle.loadString(assetsPath);
+    List<String> lines = lablesData
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines;
   }
 
   /// Converts a [CameraImage] in YUV420 format to [Image] in RGB format

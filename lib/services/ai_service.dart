@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land/modules/core/task_request_model.dart';
-import 'package:ai_model_land/modules/core/task_response_model.dart';
-import 'package:ai_model_land/services/ai_providers/tensor_flow/tensorFlowLite.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
+import 'package:ai_model_land/models/core/task_response_model.dart';
+import 'package:ai_model_land/services/ai_providers/onnx/onnx.dart';
+import 'package:ai_model_land/services/ai_providers/tensor_flow/tensor_flow_lite_interface.dart';
 import 'package:ai_model_land/services/file_interaction/local-network_service.dart';
 import 'package:ai_model_land/services/platform_info.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
@@ -18,9 +19,11 @@ class AiService {
   AiService(
       {required this.networkInteraction,
       required final TensorFlowLite tensorFlowProviderService,
+      required final ONNX ONNXProviderService,
       required this.platformInfo}) {
     providerService.putIfAbsent(
         ModelFormat.tflite, () => tensorFlowProviderService);
+    providerService.putIfAbsent(ModelFormat.onnx, () => ONNXProviderService);
   }
 
   factory AiService.defaultInstance() {
@@ -28,6 +31,7 @@ class AiService {
       platformInfo: PlatformInfo.defaultInstance(),
       networkInteraction: NetworkService.defaultInstance(),
       tensorFlowProviderService: TensorFlowLite.defaultInstance(),
+      ONNXProviderService: ONNX.defaultInstance(),
     );
   }
   //Base function from where you can run models in you project, you will need to pass the params
@@ -43,9 +47,8 @@ class AiService {
   }
 
   //Check what platform we have, which optionals for AI models we have (GPU,TPU,CPU, etc)
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
-    return await platformInfo.checkPlatformGPUAcceleratorPossibilities();
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
+    return await platformInfo.checkPlatformInfo();
   }
 
   Future<bool> loadModelToProvider(
@@ -58,7 +61,7 @@ class AiService {
         .addModel(request: request, baseModel: baseModel);
   }
 
-  Future<void> stopModel({required BaseModel baseModel}) async {
+  Future<bool> stopModel({required BaseModel baseModel}) async {
     if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
@@ -66,7 +69,7 @@ class AiService {
     if (baseModel.format == null) {
       throw Exception('Incorrect Base Model');
     }
-    await providerService[baseModel.format]!.stopModel();
+    return await providerService[baseModel.format]!.stopModel();
   }
 
   Future<BaseModel> downloadFileToAppDir({required BaseModel baseModel}) async {
@@ -82,20 +85,21 @@ class AiService {
     }
   }
 
-  Future<void> deleteModel({required BaseModel baseModel}) async {
-    await networkInteraction.deleteModel(model: baseModel);
+  Future<bool> deleteModel({required BaseModel baseModel}) async {
+    final isdelete = await networkInteraction.deleteModel(model: baseModel);
+    return isdelete;
   }
 
-  Future<void> restartModel(
+  Future<bool> restartModel(
       {required BaseModel baseModel, required TaskRequestModel request}) async {
     if (providerService[baseModel.format] == null) {
       throw Exception('Incorrect Provider');
     }
-    await providerService[baseModel.format]!
+    return await providerService[baseModel.format]!
         .restartModel(request: request, baseModel: baseModel);
   }
 
-  bool isModelLoaded({required BaseModel baseModel}) {
-    return providerService[baseModel.format]!.isModelLoaded();
+  Future<bool> isModelLoaded({required BaseModel baseModel}) async {
+    return await providerService[baseModel.format]!.isModelLoaded();
   }
 }

@@ -1,15 +1,16 @@
 import 'dart:async';
+import 'package:ai_model_land/services/lib_initialization_service.dart';
 import 'package:ai_model_land_example/modules/app_module.dart';
-import 'package:ai_model_land_example/modules/pages/core/home_page.dart';
 import 'package:ai_model_land_example/routes/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     //Catch Errors caught by Flutter
+    initAIModelLandLib();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       //TODO add catcher
@@ -31,10 +32,13 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Modular.setInitialRoute(Routes.home.module);
+    ScreenUtil.init(context);
+    ScreenUtil.configure(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+    );
     return MaterialApp.router(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       debugShowCheckedModeBanner: false,
       title: 'AI Model Land',
       routeInformationParser: Modular.routeInformationParser,

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:ai_model_land/modules/core/base_model.dart';
-import 'package:ai_model_land/modules/core/task_request_model.dart';
-import 'package:ai_model_land/modules/core/task_response_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
+import 'package:ai_model_land/models/core/task_request_model.dart';
+import 'package:ai_model_land/models/core/task_response_model.dart';
 import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:ai_model_land/repositories/implements/global_storage.dart';
 import 'package:ai_model_land/services/ai_service.dart';
@@ -55,8 +55,8 @@ class AiModelLandLib {
         request: request, baseModel: baseModel);
   }
 
-  Future<void> stopModel({required BaseModel baseModel}) async {
-    await aiService.stopModel(baseModel: baseModel);
+  Future<bool> stopModel({required BaseModel baseModel}) async {
+    return await aiService.stopModel(baseModel: baseModel);
   }
 
   Future<TaskResponseModel> runTaskOnTheModel(
@@ -65,26 +65,24 @@ class AiModelLandLib {
         request: request, baseModel: baseModel);
   }
 
-  bool isModelLoaded({required BaseModel baseModel}) {
-    return aiService.isModelLoaded(baseModel: baseModel);
+  Future<bool> isModelLoaded({required BaseModel baseModel}) async {
+    return await aiService.isModelLoaded(baseModel: baseModel);
   }
 
-  Future<void> deleteModel(
-      {required BaseModel baseModel, required bool fromDevice}) async {
-    await coreRepository.delete(baseModel.id.toString());
-    if (fromDevice == true) {
-      await aiService.deleteModel(baseModel: baseModel);
+  Future<bool> deleteModelFromDevice({required BaseModel baseModel}) async {
+    if (baseModel.id != null) {
+      await coreRepository.delete(baseModel.id.toString());
     }
+    return await aiService.deleteModel(baseModel: baseModel);
   }
 
-  Future<Map<String, dynamic>>
-      checkPlatformGPUAcceleratorPossibilities() async {
-    return await aiService.checkPlatformGPUAcceleratorPossibilities();
+  Future<Map<String, dynamic>> checkPlatformInfo() async {
+    return await aiService.checkPlatformInfo();
   }
 
-  Future<void> restartModel(
+  Future<bool> restartModel(
       {required BaseModel baseModel, required TaskRequestModel request}) async {
-    await aiService.restartModel(baseModel: baseModel, request: request);
+    return await aiService.restartModel(baseModel: baseModel, request: request);
   }
 
   //Repo future

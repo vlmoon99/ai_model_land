@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -12,14 +12,17 @@ class NetworkService {
   factory NetworkService.defaultInstance() {
     return NetworkService(dio: Dio());
   }
-  Future<void> deleteModel({required BaseModel model}) async {
+  Future<bool> deleteModel({required BaseModel model}) async {
     final fileOnDevice = File('${model.source}');
     if (await fileOnDevice.exists()) {
       try {
         await fileOnDevice.delete();
+        return true;
       } catch (e) {
         throw Exception("$e");
       }
+    } else {
+      throw Exception("File not exist");
     }
   }
 

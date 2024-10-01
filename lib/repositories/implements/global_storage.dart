@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:ai_model_land/consts/storage_keys.dart';
-import 'package:ai_model_land/modules/core/base_model.dart';
+import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/repositories/i_repository.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
