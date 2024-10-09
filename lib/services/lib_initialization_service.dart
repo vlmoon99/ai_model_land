@@ -4,7 +4,8 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 final InAppLocalhostServer? localhostServer = kIsWeb
     ? null
-    : InAppLocalhostServer(documentRoot: WebViewConstants.documentRoot);
+    : InAppLocalhostServer(
+        documentRoot: WebViewConstants.documentRoot, port: 8090);
 
 Future<void> initAIModelLandLib() async {
   if (!kIsWeb) {
