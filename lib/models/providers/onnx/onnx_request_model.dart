@@ -18,7 +18,7 @@ class OnnxRequestModel implements TaskRequestModel {
   @override
   LoadModelWay? loadModelWay;
 
-  String? loadModelFilePath;
+  String? urlPath;
 
   String? pathToAsset;
 
@@ -42,7 +42,7 @@ class OnnxRequestModel implements TaskRequestModel {
       this.labelsFile,
       this.loadModelWay,
       this.uint8list,
-      this.loadModelFilePath,
+      this.urlPath,
       this.threshold,
       this.pathToAsset,
       this.shape,

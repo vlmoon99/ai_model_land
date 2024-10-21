@@ -22,6 +22,7 @@ class _ProvidersInteractions extends RouteClass {
   String test = "/test";
   String textClassification = '/text-detection';
   String ageClassification = '/age-classification';
+  String llm = '/llm';
   String photoDetectionClassification = "/photo-detection-classification";
   String genderClassification = "/gender-classification";
   String videoObjectDetection = "/video-object-detection";

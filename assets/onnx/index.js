@@ -8,7 +8,7 @@ export class Onnx {
         console.log('Received chunk of size model:', chunk.length);
     }
 
-    async loadWorkerModel(mergedArray, numThreads, providWebGLWebGPU) {
+    async loadWorkerModel(dataModel, numThreads, providWebGLWebGPU) {
       if (this.worker != null) {
         throw new Error("Worker work already");
       } else {
@@ -96,7 +96,7 @@ export class Onnx {
         return await new Promise((resolve, reject) => {
             this.worker.postMessage({
               isRun: false,
-              modelData: mergedArray,
+              modelData: dataModel,
               providWebGLWebGPU: providWebGLWebGPU
             });
     
@@ -347,8 +347,10 @@ export class Onnx {
 }
 
 
-    async createSessionBuffer(numThreads = 1, providWebGLWebGPU = ""){
+    async createSessionBufferPath(numThreads = 1, providWebGLWebGPU = "", urlToModel){
       this.numThreads = numThreads;
+      const response = await fetch('assets/onnx/llm/model_q4f16.onnx');
+      console.log(response);
       if(this.modelBuffer.length != 0){
         try{
             let totalLength = this.modelBuffer.reduce((acc, val) => acc + val.length, 0);
@@ -363,9 +365,21 @@ export class Onnx {
             this.modelBuffer = [];
             totalLength = null;
             offset = null;
-            var res = await this.loadWorkerModel(mergedArray, numThreads, providWebGLWebGPU);
+            const res = await this.loadWorkerModel(mergedArray, numThreads, providWebGLWebGPU);
             return res.res;
         }catch(e){
+            return JSON.stringify({error: `${e}`});
+        }
+      } else if (urlToModel != null) {
+        try{
+            const response = await fetch(urlToModel);
+            console.log(response);
+            const data = await response.arrayBuffer();
+            const uint8Array = new Uint8Array(data);
+            console.log(uint8Array);
+            const res = await this.loadWorkerModel(uint8Array, numThreads, providWebGLWebGPU);
+            return res.res;
+        } catch(e){
             return JSON.stringify({error: `${e}`});
         }
       } else {

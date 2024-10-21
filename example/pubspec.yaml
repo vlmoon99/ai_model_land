@@ -77,3 +77,4 @@ flutter:
     - assets/onnx/image_classification/classes.txt
     - assets/onnx/gender_classification/gender_googlenet.onnx
     - assets/onnx/age_classification/age_googlenet.onnx
+    - assets/onnx/llm/model_q4f16.onnx

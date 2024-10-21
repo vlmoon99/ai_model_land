@@ -64,6 +64,12 @@ class _MainOnnxPageState extends State<MainOnnxPage> {
                                   .pushNamed("//home/onnx/age-classification");
                             },
                             text: "Age Classification Model"),
+                        SizedBox(height: 8),
+                        CustomButton(
+                            onPressed: () {
+                              Modular.to.pushNamed("//home/onnx/llm");
+                            },
+                            text: "LLM Model"),
                       ],
                     ),
                   )
