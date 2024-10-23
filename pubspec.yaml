@@ -67,8 +67,9 @@ flutter:
 
   # To add assets to your plugin package, add an assets section, like this:
   assets:
-    - assets/onnx/index.html
-    - assets/onnx/index.js
+    - assets/index.html
+    - assets/onnx/onnx.js
+    - assets/transformers/transformers.js
   # For details regarding assets in packages, see
   # https://flutter.dev/assets-and-images/#from-packages
   #

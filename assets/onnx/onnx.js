@@ -412,4 +412,4 @@ export class Onnx {
 };
 
 window.onnx = new Onnx();
-console.log("AI Model Land initialized");
+console.log("ONNX initialized");
