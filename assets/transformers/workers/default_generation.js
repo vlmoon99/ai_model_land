@@ -1,28 +1,43 @@
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
 
-async function loadPipelineDefault(nameUseFor, pathToModel, device, data, optionsForGnerator){ //'text-generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
-        if (!nameUseFor || !pathToModel || !device || !data || !optionsForGnerator) {
-            throw new Error('All parameters are required.');
-        }
-        try{
-            const generator = await pipeline(nameUseFor, pathToModel, {
-                device: device, // <- Run on WebGPU
-            });
-            
-            // Define the list of messages
-            const messages = data;
-            
-            // Generate a response
-            const output = await generator(messages, optionsForGnerator);
-            console.log(output);
-        } catch (error) {
-            throw new Error('Model execution error:', error);
-        }
+
+let generator;
+
+async function loadPipelineDefault({typeModel, pathToModel, device}){ //'text-generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
+    if (!typeModel || !pathToModel || !device) {
+        throw new Error('All parameters are required.');
     }
+    try{
+      generator = await pipeline(typeModel, pathToModel, {
+          device: device,
+      });
+      console.log("successful");
+      self.postMessage({ status: "successful" });
+    } catch (error) {
+      self.postMessage({
+        status: 'error',
+        message: error
+      });
+    }
+}
 
 
-
-
+async function runModel({messages, optionsForGnerator = null}){ //'text-generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
+    try{
+      // Generate a response
+      const output = await generator(messages, optionsForGnerator);
+      console.log(output);
+      self.postMessage({
+        status: 'successful',
+        message: output
+      });
+    } catch (error) {
+      self.postMessage({
+        status: 'error',
+        message: error.toString()
+      });
+    }
+}
 
 
 self.addEventListener("message", async (e) => {
@@ -30,21 +45,11 @@ self.addEventListener("message", async (e) => {
   
     switch (type) {
       case "load":
-        loadPipelineDefault();
+        loadPipelineDefault(data);
         break;
   
-      case "generate":
-        stopping_criteria.reset();
-        generate(data);
-        break;
-  
-      case "interrupt":
-        stopping_criteria.interrupt();
-        break;
-  
-      case "reset":
-        // past_key_values_cache = null;
-        stopping_criteria.reset();
+      case "runModel":
+        runModel(data);
         break;
     }
-  });
+});

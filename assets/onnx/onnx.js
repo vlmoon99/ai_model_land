@@ -393,9 +393,9 @@ export class Onnx {
         throw JSON.stringify({error: new Error("Model not loaded")});
       }
       try{
-      await this.worker.terminate();
-      this.worker = null;
-      return JSON.stringify({res: true});
+        await this.worker.terminate();
+        this.worker = null;
+        return JSON.stringify({res: true});
       } catch (e) {
         throw JSON.stringify({error: new Error(`${e}`)});
       }

@@ -15,6 +15,7 @@ class _Providers extends RouteClass {
   String init = '/';
   String tensorFlow = '/tensorFlow';
   String onnx = '/onnx';
+  String transformers = '/transformers';
 }
 
 class _ProvidersInteractions extends RouteClass {

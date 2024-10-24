@@ -13,5 +13,6 @@ enum LoadModelWay {
   fromFile,
   fromAddress,
   fromBuffer,
-  fromURL;
+  fromURL,
+  fromID;
 }

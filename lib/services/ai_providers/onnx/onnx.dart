@@ -110,6 +110,7 @@ class ONNX implements ProviderAiService {
     //numThreads recommend 1(by default 1)
     if (urlPath != null) {
       if (!kIsWeb) {
+        // remove
         throw Exception(
             "The model can only be uploaded using the path on the web");
       } else {

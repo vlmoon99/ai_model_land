@@ -191,6 +191,13 @@ class _HomePageState extends State<HomePage> {
                     },
                     text: 'ONNX',
                   ),
+                  SizedBox(height: 10),
+                  CustomButton(
+                    onPressed: () {
+                      Modular.to.pushNamed('//home/transformers');
+                    },
+                    text: 'Transformers',
+                  ),
                 ],
               ),
             ),
