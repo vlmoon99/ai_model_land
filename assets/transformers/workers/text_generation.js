@@ -7,6 +7,7 @@ let model;
 
 async function loadTextGenerationPipeline({model_id, dtype, device, progress_callback = progress_callback || (() => {})}) { // 'default',{model_id: 'onnx-community/Llama-3.2-1B-Instruct-q4f16', device: 'webgpu', dtype: 'q4f16'}
     try{
+        console.log("Start loading");
         tokenizer ??= await AutoTokenizer.from_pretrained(model_id, {
             progress_callback,
         });
@@ -16,7 +17,7 @@ async function loadTextGenerationPipeline({model_id, dtype, device, progress_cal
             device: device,
             progress_callback,
         });
-        self.postMessage({ status: "successful" });
+        self.postMessage({ status: "successful"});
     } catch(error) {
         self.postMessage({
           status: 'error',

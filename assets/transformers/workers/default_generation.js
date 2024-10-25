@@ -8,6 +8,7 @@ async function loadPipelineDefault({typeModel, pathToModel, device}){ //'text-ge
         throw new Error('All parameters are required.');
     }
     try{
+      console.log("Start loading");
       generator = await pipeline(typeModel, pathToModel, {
           device: device,
       });
@@ -16,7 +17,7 @@ async function loadPipelineDefault({typeModel, pathToModel, device}){ //'text-ge
     } catch (error) {
       self.postMessage({
         status: 'error',
-        message: error
+        message: error.message
       });
     }
 }

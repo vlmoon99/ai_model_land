@@ -26,6 +26,18 @@ class TransformersRequestModel implements TaskRequestModel {
 
   String? dtype;
 
+  Object? tokenizerChatOptions;
+
+  int? max_new_tokens;
+
+  bool? do_sample;
+
+  bool? return_dict_in_generate;
+
+  bool? skip_special_tokens;
+
+  Object? optionsForGnerator;
+
   TransformersRequestModel(
       {this.data,
       this.dataMulti,
@@ -35,7 +47,13 @@ class TransformersRequestModel implements TaskRequestModel {
       this.typeLoadModel,
       this.backendDevice,
       this.dtype,
-      this.typeModel});
+      this.typeModel,
+      this.tokenizerChatOptions,
+      this.max_new_tokens,
+      this.do_sample,
+      this.return_dict_in_generate,
+      this.skip_special_tokens,
+      this.optionsForGnerator});
 }
 
 enum TransformersBackend { webgl, webgpu, cpu, wasm }

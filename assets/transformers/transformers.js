@@ -11,13 +11,19 @@ export class Transformers {
         if (!model_id || !dtype || !device){
             throw new Error("Input all required parameters");
         }
-        this.worker = new Worker(new URL("./workers/text_generation.js", import.meta.url), {
-            type: "module",
-        });
-        this.worker.postMessage({type: "load", data: {model_id, dtype, device, progress_callback}});
-        const loadResponse = await this.waitForWorkerMessage();
-        console.log("Model loaded successfully", loadResponse);
-        return loadResponse;
+        try{
+            this.worker = new Worker(new URL("./workers/text_generation.js", import.meta.url), {
+                type: "module",
+            });
+            this.worker.postMessage({type: "load", data: {model_id, dtype, device, progress_callback}});
+            console.log("Start loading");
+            const loadResponse = await this.waitForWorkerMessage();
+            console.log("Model loaded successfully", loadResponse);
+            return loadResponse;    
+        } catch (error) { 
+            throw JSON.stringify({error: new Error(`Model load by default error: ${error.toString()}`)});
+
+        }
     }
 
     async loadPipelineDefault(typeModel, pathToModel, device){ //'text_generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
@@ -32,30 +38,37 @@ export class Transformers {
                 type: "module",
             });
             this.worker.postMessage({type: "load", data: {typeModel , pathToModel, device}});
+            console.log("Start loading");
             const loadResponse = await this.waitForWorkerMessage();
             console.log("Model loaded successfully", loadResponse);
             return loadResponse;
         } catch (error) {
-            throw JSON.stringify({error: new Error(`Model load by default error: ${error.toString()}`)});
+            throw JSON.stringify({error: new Error(`Model load by text_generation error: ${error.message}`)});
         }
     }
 
-    async waitForWorkerMessage() {
-        return new Promise((resolve, reject) => {
-            this.worker.onmessage = function(e) {
-                const { status, message } = e.data;
-                if (status === 'successful') {
-                    resolve(JSON.stringify({res: e.data}));
-                } else if (status === 'error') {
-                    reject(JSON.stringify({error: "Worker Error" + error.toString()}));
-                }
-            };
-            this.worker.onerror = function(error) {
-                reject(JSON.stringify({error: error.toString()}));
-            };
+async waitForWorkerMessage() {
+    return new Promise((resolve, reject) => {
+        this.worker.onmessage = function(e) {
+            const { status, message } = e.data;
+            if (status === 'successful') {
+                resolve(JSON.stringify({res: e.data}));
+            } else if (status === 'error') {
+                reject(JSON.stringify({error: "Worker Error: " + (message || "Unknown error")}));
+            }
+        };
+
+        this.worker.onerror = function(error) {
+            reject(JSON.stringify({error: error.toString()}));
+        };
+    });
+}
+
+    async test(test1 ,{test2, test3 = null}){
+        return new Promise((resolve, reject)=> {
+            resolve(JSON.stringify({res: [test1, test2, test3]}));
         });
     }
-
 
     async loadModel(typeLoad, {model_id = null, dtype, typeModel = null, device = null, progress_callback = null}){
         this.typeLoad = typeLoad;
