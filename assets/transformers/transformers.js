@@ -64,12 +64,6 @@ async waitForWorkerMessage() {
     });
 }
 
-    async test(test1 ,{test2, test3 = null}){
-        return new Promise((resolve, reject)=> {
-            resolve(JSON.stringify({res: [test1, test2, test3]}));
-        });
-    }
-
     async loadModel(typeLoad, {model_id = null, dtype, typeModel = null, device = null, progress_callback = null}){
         this.typeLoad = typeLoad;
         switch (typeLoad) {

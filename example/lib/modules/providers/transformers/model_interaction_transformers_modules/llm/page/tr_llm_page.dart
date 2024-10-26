@@ -2,6 +2,7 @@ import 'package:ai_model_land/models/core/base_model.dart';
 import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
 import 'package:ai_model_land/models/providers/transformers/transformers_request_model.dart';
+import 'package:ai_model_land/models/providers/transformers/transformers_respons_model.dart';
 import 'package:ai_model_land_example/services/services.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_app_bar.dart';
 import 'package:ai_model_land_example/shared_widgets/custom_button.dart';
@@ -22,6 +23,35 @@ class _TRLLMPageState extends State<TRLLMPage> {
 
   Future<bool>? isLoad;
   bool? isModelLoaded;
+  bool? isRunModel;
+
+  final TextEditingController controller = TextEditingController();
+
+  List<Map<String, String>> messages = [
+    {'role': "\'system\'", 'content': "\'You are a helpful assistant.\'"},
+  ];
+
+  void sendMessage() async {
+    if (controller.text.isNotEmpty) {
+      setState(() {
+        messages.add({'role': "\'user\'", 'content': "\'${controller.text}\'"});
+        isRunModel = true;
+      });
+      controller.clear();
+      final newMessage = await runModel() as TransformersResponsModel;
+      final preLoad = newMessage.response as List<dynamic>;
+      final resp = preLoad[0] as Map<String, dynamic>;
+      final oneMore = resp["generated_text"] as List<dynamic>;
+      final finalData = oneMore.last as Map<String, dynamic>;
+      Map<String, String> stringMap =
+          finalData.map((key, value) => MapEntry(key, value.toString()));
+      final content = stringMap["content"];
+      setState(() {
+        messages.add({'role': "\'assistant\'", 'content': "\'${content}\'"});
+        isRunModel = false;
+      });
+    }
+  }
 
   BaseModel baseModel = BaseModel(
       source: 'onnx-community/Llama-3.2-1B-Instruct-q4f16',
@@ -41,13 +71,35 @@ class _TRLLMPageState extends State<TRLLMPage> {
 
   Future<TaskResponseModel> runModel() async {
     return await _aiModelLand.runTaskOnTheModel(
-        request: TransformersRequestModel(data: [
-          {'role': "\'system\'", 'content': "\'You are a helpful assistant.\'"},
-          {'role': "\'user\'", 'content': "\'What is the capital of France?\'"},
-        ], optionsForGnerator: {
-          "max_new_tokens": 128
-        }),
+        request: TransformersRequestModel(
+            data: messages, optionsForGnerator: {"max_new_tokens": 128}),
         baseModel: baseModel);
+  }
+
+  Future<bool> stopModel() async {
+    return await _aiModelLand.stopModel(baseModel: baseModel);
+  }
+
+  Future<bool> restartModel() async {
+    return await _aiModelLand.restartModel(
+        request: TransformersRequestModel(
+            loadModelWay: LoadModelWay.fromID,
+            typeLoadModel: TypeLoadModel.standard,
+            typeModel: 'text-generation',
+            backendDevice: TransformersBackend.webgpu),
+        baseModel: baseModel);
+  }
+
+  void checkModelLoadedStop({required BaseModel baseModel}) async {
+    final modelUpload = await _aiModelLand.isModelLoaded(baseModel: baseModel);
+    if (modelUpload) {
+      stopModel();
+    }
+  }
+
+  void dispose() {
+    checkModelLoadedStop(baseModel: baseModel);
+    super.dispose();
   }
 
   @override
@@ -85,71 +137,166 @@ class _TRLLMPageState extends State<TRLLMPage> {
                       style: Thems.textStyle,
                     ),
                     SizedBox(height: 8),
-                    CustomButton(
-                        onPressed: () async {
-                          setState(() {
-                            isLoad = loadModel();
-                          });
-                          final res = await isLoad;
-                          setState(() {
-                            isModelLoaded = res;
-                          });
-                        },
-                        text: "Load Model"),
-                    SizedBox(
-                      height: 10,
+                    Align(
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          CustomButton(
+                              onPressed: () async {
+                                setState(() {
+                                  isLoad = loadModel();
+                                });
+                                final res = await isLoad;
+                                setState(() {
+                                  isModelLoaded = res;
+                                });
+                              },
+                              text: "Load Model"),
+                          isLoad == null
+                              ? Text("Result: model not load",
+                                  style: Thems.textStyle.copyWith(fontSize: 15))
+                              : FutureBuilder(
+                                  future: isLoad,
+                                  builder: (BuildContext context,
+                                      AsyncSnapshot<bool> snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Column(
+                                        children: [
+                                          CircularProgressIndicator(),
+                                          Text(
+                                              "Loading a model can take a long time")
+                                        ],
+                                      );
+                                    } else if (snapshot.hasError) {
+                                      return SelectableText(
+                                          'Error: ${snapshot.error}');
+                                    } else if (snapshot.data == true) {
+                                      return Text("Result: model was loaded",
+                                          style: Thems.textStyle
+                                              .copyWith(fontSize: 15));
+                                    } else {
+                                      return Text("Result: try add again",
+                                          style: Thems.textStyle
+                                              .copyWith(fontSize: 15));
+                                    }
+                                  },
+                                ),
+                        ],
+                      ),
                     ),
-                    CustomButton(
-                        onPressed: () async {
-                          await runModel();
-                        },
-                        text: "Run Model"),
-                    isLoad == null
-                        ? Text("Result: model not load",
-                            style: Thems.textStyle.copyWith(fontSize: 15))
-                        : FutureBuilder(
-                            future: isLoad,
-                            builder: (BuildContext context,
-                                AsyncSnapshot<bool> snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Column(
-                                  children: [
-                                    CircularProgressIndicator(),
-                                    Text("Loading a model can take a long time")
-                                  ],
-                                );
-                              } else if (snapshot.hasError) {
-                                return SelectableText(
-                                    'Error: ${snapshot.error}');
-                              } else if (snapshot.data == true) {
-                                return Text("Result: model was loaded",
-                                    style:
-                                        Thems.textStyle.copyWith(fontSize: 15));
-                              } else {
-                                return Text("Result: try add again",
-                                    style:
-                                        Thems.textStyle.copyWith(fontSize: 15));
-                              }
-                            },
-                          ),
                     SizedBox(height: 8),
                     Text(
                       "After that you can use model",
                       style: Thems.textStyle,
                     ),
                     SizedBox(height: 8),
-                    // isModelLoaded != true
-                    //     ? Container(
-                    //         child: Align(
-                    //           alignment: Alignment.center,
-                    //           child: Text(
-                    //             "Load the model",
-                    //             style: Thems.textStyle,
-                    //           ),
-                    //         ),
-                    //       )
-                    //     :
+                    isModelLoaded != true
+                        ? Container(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                "Load the model",
+                                style: Thems.textStyle,
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Container(
+                              width: MediaQuery.of(context).size.width < 1000
+                                  ? MediaQuery.of(context).size.width * 0.8
+                                  : MediaQuery.of(context).size.width * 0.6,
+                              height: MediaQuery.of(context).size.height * 0.6,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Column(
+                                children: [
+                                  SizedBox(height: 10),
+                                  Expanded(
+                                    child: isRunModel != true
+                                        ? ListView.builder(
+                                            itemCount: messages.length,
+                                            itemBuilder: (context, index) {
+                                              final message = messages[index];
+                                              final isUser =
+                                                  message['role'] == "\'user\'";
+                                              final isAssistant =
+                                                  message['role'] ==
+                                                      'assistant';
+
+                                              if (message['role'] ==
+                                                  "\'system\'") {
+                                                return SizedBox.shrink();
+                                              }
+
+                                              return Align(
+                                                alignment: isUser
+                                                    ? Alignment.centerRight
+                                                    : Alignment.centerLeft,
+                                                child: Container(
+                                                  margin: EdgeInsets.symmetric(
+                                                      vertical: 5,
+                                                      horizontal: 10),
+                                                  padding: EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: isUser
+                                                        ? Colors.blueAccent
+                                                        : Colors.grey.shade200,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  child: Text(
+                                                    message['content'] ?? '',
+                                                    style: TextStyle(
+                                                      color: isUser
+                                                          ? Colors.white
+                                                          : Colors.black87,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Column(
+                                            children: [
+                                              CircularProgressIndicator(),
+                                              Text("Model run")
+                                            ],
+                                          ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: controller,
+                                            decoration: InputDecoration(
+                                              hintText: 'Type a message...',
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        IconButton(
+                                          icon: Icon(Icons.send,
+                                              color: Colors.blueAccent),
+                                          onPressed: sendMessage,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ),

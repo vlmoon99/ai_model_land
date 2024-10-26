@@ -42,7 +42,8 @@ class WebviewJsVMService implements JsVMService {
         _webViewMobileController = controller;
       },
       onConsoleMessage: (controller, consoleMessage) {
-        if (consoleMessage.message == 'AI Model Land initialized') {
+        if (consoleMessage.message == 'ONNX initialized' ||
+            consoleMessage.message == 'Transformers.js initialized') {
           _readyCompleter.complete();
         }
       },

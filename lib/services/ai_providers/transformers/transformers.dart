@@ -39,8 +39,6 @@ class Transformers implements ProviderAiService {
     if (res.containsKey("error")) {
       throw Exception("${res["error"]}");
     }
-    // final generator = await jsVMService.callJSAsync(
-    //     '''window.transformers.test('${transformersRequest.typeLoadModel!.name}',{test2: '${baseModel.source}'})''');
 
     return true;
   }
@@ -68,9 +66,23 @@ class Transformers implements ProviderAiService {
 
   @override
   Future<bool> restartModel(
-      {required TaskRequestModel request, required BaseModel baseModel}) {
-    // TODO: implement restartModel
-    throw UnimplementedError();
+      {required TaskRequestModel request, required BaseModel baseModel}) async {
+    try {
+      final isStop = await this.stopModel();
+      if (isStop != true) {
+        return false;
+      } else {
+        final isLoad =
+            await this.addModel(request: request, baseModel: baseModel);
+        if (isLoad != true) {
+          return false;
+        } else {
+          return true;
+        }
+      }
+    } catch (e) {
+      throw Exception("$e");
+    }
   }
 
   @override
