@@ -1,4 +1,4 @@
-import { pipeline, AutoTokenizer, AutoModelForCausalLM } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
+// import { pipeline, AutoTokenizer, AutoModelForCausalLM } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
 
 export class Transformers {
     worker;
@@ -21,8 +21,8 @@ export class Transformers {
             console.log("Model loaded successfully", loadResponse);
             return loadResponse;    
         } catch (error) { 
-            throw JSON.stringify({error: new Error(`Model load by default error: ${error.toString()}`)});
-
+            console.log("Error: error");
+            throw JSON.stringify({error: error});
         }
     }
 
@@ -34,16 +34,15 @@ export class Transformers {
             throw new Error("Worker work already");
         }
         try{
-            this.worker = new Worker(new URL("./workers/default_generation.js", import.meta.url), {
-                type: "module",
-            });
+            this.worker = new Worker(new URL("./workers/default_generation.js", import.meta.url), { type: "module" });
             this.worker.postMessage({type: "load", data: {typeModel , pathToModel, device}});
             console.log("Start loading");
             const loadResponse = await this.waitForWorkerMessage();
             console.log("Model loaded successfully", loadResponse);
             return loadResponse;
         } catch (error) {
-            throw JSON.stringify({error: new Error(`Model load by text_generation error: ${error.message}`)});
+            console.log("Error: error");
+            throw JSON.stringify({error: error});
         }
     }
 
@@ -59,7 +58,7 @@ async waitForWorkerMessage() {
         };
 
         this.worker.onerror = function(error) {
-            reject(JSON.stringify({error: error.toString()}));
+            reject(JSON.stringify({error: error.message}));
         };
     });
 }

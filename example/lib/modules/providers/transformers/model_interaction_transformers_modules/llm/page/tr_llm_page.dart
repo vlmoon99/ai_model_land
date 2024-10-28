@@ -24,6 +24,8 @@ class _TRLLMPageState extends State<TRLLMPage> {
   Future<bool>? isLoad;
   bool? isModelLoaded;
   bool? isRunModel;
+  TransformersBackend? back;
+  Future<bool>? restartStop;
 
   final TextEditingController controller = TextEditingController();
 
@@ -59,13 +61,13 @@ class _TRLLMPageState extends State<TRLLMPage> {
       format: ModelFormat.transformers,
       sourceType: ModelSourceType.local);
 
-  Future<bool> loadModel() async {
+  Future<bool> loadModel({required TransformersBackend beckend}) async {
     return await _aiModelLand.loadModel(
         request: TransformersRequestModel(
             loadModelWay: LoadModelWay.fromID,
             typeLoadModel: TypeLoadModel.standard,
             typeModel: 'text-generation',
-            backendDevice: TransformersBackend.webgpu),
+            backendDevice: beckend),
         baseModel: baseModel);
   }
 
@@ -80,13 +82,13 @@ class _TRLLMPageState extends State<TRLLMPage> {
     return await _aiModelLand.stopModel(baseModel: baseModel);
   }
 
-  Future<bool> restartModel() async {
+  Future<bool> restartModel({required TransformersBackend backend}) async {
     return await _aiModelLand.restartModel(
         request: TransformersRequestModel(
             loadModelWay: LoadModelWay.fromID,
             typeLoadModel: TypeLoadModel.standard,
             typeModel: 'text-generation',
-            backendDevice: TransformersBackend.webgpu),
+            backendDevice: backend),
         baseModel: baseModel);
   }
 
@@ -100,6 +102,75 @@ class _TRLLMPageState extends State<TRLLMPage> {
   void dispose() {
     checkModelLoadedStop(baseModel: baseModel);
     super.dispose();
+  }
+
+  Future<bool> _showRunModelDialog({required BuildContext context}) async {
+    TransformersBackend? selectedModelType = TransformersBackend.wasm;
+
+    final supportBackend = await _aiModelLand.webBackendSupport();
+    List<String> support = supportBackend.entries
+        .where((entris) => entris.value == true)
+        .map((entris) => entris.key)
+        .toList();
+
+    final filteredModelTypes = TransformersBackend.values
+        .where((type) => support.contains(type.toString().split(".").last))
+        .toList();
+
+    filteredModelTypes.addAll([TransformersBackend.wasm]);
+
+    final TransformersBackend? backendForONNX =
+        await showDialog<TransformersBackend>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Confirm load model'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Select a backend for onnx:'),
+                  DropdownButton<TransformersBackend>(
+                    value: selectedModelType,
+                    items: filteredModelTypes.map((TransformersBackend type) {
+                      return DropdownMenuItem<TransformersBackend>(
+                        value: type,
+                        child: Text(type.name),
+                      );
+                    }).toList(),
+                    onChanged: (TransformersBackend? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedModelType = newValue;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                CustomButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(selectedModelType);
+                    },
+                    text: "Load model"),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (backendForONNX != null) {
+      setState(() {
+        back = backendForONNX;
+      });
+      final load = await loadModel(beckend: backendForONNX);
+      return load;
+    } else {
+      throw Exception("What went wrong, try again.");
+    }
   }
 
   @override
@@ -125,7 +196,7 @@ class _TRLLMPageState extends State<TRLLMPage> {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      "This is text-generation model",
+                      "This is text-generation model. It is support only wasm and webgpu",
                       style: Thems.textStyle,
                     ),
                     Text(
@@ -144,7 +215,8 @@ class _TRLLMPageState extends State<TRLLMPage> {
                           CustomButton(
                               onPressed: () async {
                                 setState(() {
-                                  isLoad = loadModel();
+                                  isLoad =
+                                      _showRunModelDialog(context: context);
                                 });
                                 final res = await isLoad;
                                 setState(() {
@@ -297,6 +369,87 @@ class _TRLLMPageState extends State<TRLLMPage> {
                               ),
                             ),
                           ),
+                    SizedBox(height: 10),
+                    Text(
+                      "The second step is to load the image, choose image and run the model.",
+                      style: Thems.textStyle,
+                    ),
+                    SizedBox(height: 10),
+                    isModelLoaded != true
+                        ? Container(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                "Load the model",
+                                style: Thems.textStyle,
+                              ),
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: FilledButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      back = null;
+                                      restartStop = stopModel();
+                                    });
+                                    isModelLoaded = false;
+                                  },
+                                  style: Thems.buttonStyle,
+                                  child: Text(
+                                    'Stop Model',
+                                    style: Thems.textStyle,
+                                  ),
+                                ),
+                              ),
+                              Spacer(),
+                              Flexible(
+                                child: FilledButton(
+                                  onPressed: () {
+                                    if (back != null) {
+                                      setState(() {
+                                        restartStop =
+                                            restartModel(backend: back!);
+                                      });
+                                    }
+                                  },
+                                  style: Thems.buttonStyle,
+                                  child: Text(
+                                    'Restart Model',
+                                    style: Thems.textStyle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                    Align(
+                      alignment: Alignment.center,
+                      child: restartStop == null
+                          ? Container()
+                          : FutureBuilder(
+                              future: restartStop,
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<bool> snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
+                                } else if (snapshot.hasError) {
+                                  return SelectableText(
+                                      'Error: ${snapshot.error}');
+                                } else if (snapshot.data == true) {
+                                  return Text("Result: success",
+                                      style: Thems.textStyle
+                                          .copyWith(fontSize: 15));
+                                } else {
+                                  return Text("Result: try again",
+                                      style: Thems.textStyle
+                                          .copyWith(fontSize: 15));
+                                }
+                              },
+                            ),
+                    ),
                   ],
                 ),
               ),

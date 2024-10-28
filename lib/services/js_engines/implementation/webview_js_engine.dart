@@ -27,6 +27,7 @@ class WebviewJsVMService implements JsVMService {
         allowContentAccess: true,
         allowUniversalAccessFromFileURLs: true,
         cacheMode: CacheMode.LOAD_NO_CACHE,
+        limitsNavigationsToAppBoundDomains: true,
         databaseEnabled: true,
         mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
       ),

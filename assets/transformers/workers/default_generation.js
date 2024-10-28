@@ -1,4 +1,4 @@
-import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
+import { pipeline} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
 
 
 let generator;
@@ -17,7 +17,7 @@ async function loadPipelineDefault({typeModel, pathToModel, device}){ //'text-ge
     } catch (error) {
       self.postMessage({
         status: 'error',
-        message: error.message
+        message: error.toString()
       });
     }
 }
