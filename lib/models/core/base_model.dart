@@ -34,6 +34,7 @@ enum ModelFormat {
   onnx,
   transformers;
 
+
   @override
   String toString() {
     return name;

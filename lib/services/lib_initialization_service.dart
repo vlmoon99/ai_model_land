@@ -7,6 +7,7 @@ final InAppLocalhostServer? localhostServer = kIsWeb
     : InAppLocalhostServer(
         documentRoot: WebViewConstants.documentRoot, port: 8090);
 
+
 Future<void> initAIModelLandLib() async {
   if (!kIsWeb) {
     await localhostServer?.start();
