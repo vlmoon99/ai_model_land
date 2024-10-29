@@ -4,28 +4,6 @@ export class Transformers {
     worker;
     typeLoad;
 
-    async loadTextGenerationPipeline(model_id, dtype, device ,progress_callback = null) {
-        if (this.worker != null){
-            throw new Error("Worker work already");
-        }
-        if (!model_id || !dtype || !device){
-            throw new Error("Input all required parameters");
-        }
-        try{
-            this.worker = new Worker(new URL("./workers/text_generation.js", import.meta.url), {
-                type: "module",
-            });
-            this.worker.postMessage({type: "load", data: {model_id, dtype, device, progress_callback}});
-            console.log("Start loading");
-            const loadResponse = await this.waitForWorkerMessage();
-            console.log("Model loaded successfully", loadResponse);
-            return loadResponse;    
-        } catch (error) { 
-            console.log("Error: error");
-            throw JSON.stringify({error: error});
-        }
-    }
-
     async loadPipelineDefault(typeModel, pathToModel, device){ //'text_generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
         if (!typeModel || !pathToModel || !device) {
             throw new Error("Input all required parameters");
@@ -71,11 +49,6 @@ async waitForWorkerMessage() {
                     throw JSON.stringify({ error: 'Input all parameters'});
                 }
                 return await this.loadPipelineDefault(typeModel, model_id, device);
-            case 'text_generation':
-                if(!model_id || !dtype || !device){
-                    throw JSON.stringify({ error: 'Input all parameters'});
-                }
-                return await this.loadTextGenerationPipeline(model_id, dtype, device, progress_callback)
             default:
                 throw JSON.stringify({ error: 'Incorrect type load'});
         }
@@ -91,11 +64,6 @@ async waitForWorkerMessage() {
                 const loadResponse = await this.waitForWorkerMessage();
                 console.log("Model loaded successfully", loadResponse);
                 return loadResponse;
-            case 'text_generation':
-                this.worker.postMessage({type: "runModel", data: { messages: messages, tokenizerChatOptions: tokenizerChatOptions, max_new_tokens: max_new_tokens, do_sample: do_sample, return_dict_in_generate: return_dict_in_generate, skip_special_tokens: skip_special_tokens}});
-                const TextRes = await this.waitForWorkerMessage();
-                console.log("Model loaded successfully", TextRes);
-                return TextRes;
         }
     }
 
