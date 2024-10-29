@@ -15,4 +15,5 @@ enum LoadModelWay {
   fromBuffer,
   fromURL,
   fromID;
+
 }

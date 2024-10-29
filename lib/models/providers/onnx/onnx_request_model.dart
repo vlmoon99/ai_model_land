@@ -18,7 +18,9 @@ class OnnxRequestModel implements TaskRequestModel {
   @override
   LoadModelWay? loadModelWay;
 
+
   String? urlPath;
+
 
   String? pathToAsset;
 
