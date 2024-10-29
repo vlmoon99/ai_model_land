@@ -11,6 +11,9 @@ import 'package:ai_model_land/services/provider_ai_service.dart';
 import 'package:ai_model_land/services/js_engines/interface/js_engine_stub.dart'
     if (dart.library.io) 'package:ai_model_land/services/js_engines/implementation/webview_js_engine.dart'
     if (dart.library.js) 'package:ai_model_land/services/js_engines/implementation/web_js_engine.dart';
+
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../../models/providers/onnx/onnx_respons_model.dart';
@@ -77,6 +80,16 @@ class ONNX implements ProviderAiService {
                 throw Exception("Buffer not found");
               }
             }
+
+          case LoadModelWay.fromURL:
+            {
+              return await loadModelCreateSession(
+                  urlPath: baseModel.source,
+                  numThreads: onnxRequest.numThreads,
+                  onProgressUpdate: onnxRequest.onProgressUpdate,
+                  onnxBackend: onnxRequest.onnxBackend!);
+            }
+
           default:
             {
               throw Exception(
@@ -92,41 +105,52 @@ class ONNX implements ProviderAiService {
   }
 
   Future<bool> loadModelCreateSession(
-      {required modelBuffer,
+
+      {dynamic? modelBuffer,
+      String? urlPath,
       int? numThreads,
       Function(double)? onProgressUpdate,
       required ONNXBackend onnxBackend}) async {
+    var session;
     //numThreads recommend 1(by default 1)
-    final isLoad = await loadOnWeb(
-        byts: modelBuffer,
-        callFunction: "window.onnx.receiveChunk",
-        onProgressUpdate: onProgressUpdate);
-    if (isLoad == true) {
-      final session = await jsVMService.callJSAsync(
-          "window.onnx.createSessionBuffer($numThreads, '${onnxBackend.toString().split(".").last}')");
-      Map<String, dynamic> res = await jsonDecode(session);
-      if (res.containsKey("error")) {
-        throw Exception("Error: ${res["error"]}");
-      }
-      inputNames = res["inputNames"];
-      outputNames = res["outputNames"];
-      return true;
+    if (urlPath != null) {
+        session = await jsVMService.callJSAsync(
+            "window.onnx.createSessionBufferPath($numThreads, '${onnxBackend.toString().split(".").last}', '$urlPath')");
     } else {
-      throw Exception("Model not load on web");
+      final isLoad = await loadOnWeb(
+          byts: modelBuffer,
+          callFunction: "window.onnx.receiveChunk",
+          onProgressUpdate: onProgressUpdate);
+      if (isLoad == true) {
+        session = await jsVMService.callJSAsync(
+            "window.onnx.createSessionBufferPath($numThreads, '${onnxBackend.toString().split(".").last}')");
+      } else {
+        throw Exception("Model not load on web");
+      }
     }
+    Map<String, dynamic> res = await jsonDecode(session);
+    if (res.containsKey("error")) {
+      throw Exception("Error: ${res["error"]}");
+    }
+    inputNames = res["inputNames"];
+    outputNames = res["outputNames"];
+    return true;
   }
 
   Future<bool> loadOnWeb(
       {required Uint8List byts,
       required String callFunction,
       Function(double)? onProgressUpdate}) async {
-    int chunkSize = byts.length ~/ 50;
+
+    int chunkSize = byts.length ~/ 100;
+
     int offset = 0;
 
     while (offset < byts.length) {
       int end =
           (offset + chunkSize < byts.length) ? offset + chunkSize : byts.length;
       Uint8List chunk = byts.sublist(offset, end);
+
       final res =
           await jsVMService.callJS(callFunction + "(${chunk.toString()})");
       offset += chunkSize;

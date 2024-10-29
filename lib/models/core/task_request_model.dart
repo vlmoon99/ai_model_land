@@ -12,5 +12,8 @@ enum LoadModelWay {
   fromAssets,
   fromFile,
   fromAddress,
-  fromBuffer;
+  fromBuffer,
+  fromURL,
+  fromID;
+
 }
