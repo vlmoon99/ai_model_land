@@ -52,6 +52,12 @@ class _MainTransformersPageState extends State<MainTransformersPage> {
                         Modular.to.pushNamed('//home/transformers/qwen');
                       },
                       text: "Qwen"),
+                  SizedBox(height: 10),
+                  CustomButton(
+                      onPressed: () {
+                        Modular.to.pushNamed('//home/transformers/phi');
+                      },
+                      text: "Phi"),
                 ],
               ),
             )

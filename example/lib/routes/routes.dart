@@ -27,6 +27,7 @@ class _ProvidersInteractions extends RouteClass {
 
   String llm = '/llm';
   String qwen = '/qwen';
+  String phi = '/phi';
 
   String photoDetectionClassification = "/photo-detection-classification";
   String genderClassification = "/gender-classification";
