@@ -32,11 +32,17 @@ class TransformersRequestModel implements TaskRequestModel {
 
   bool? do_sample;
 
+  bool? use_external_data_format;
+
   bool? return_dict_in_generate;
 
   bool? skip_special_tokens;
 
   Object? optionsForGnerator;
+
+  String? model_file_name;
+
+  bool? useChatTemplate;
 
   TransformersRequestModel(
       {this.data,
@@ -53,7 +59,10 @@ class TransformersRequestModel implements TaskRequestModel {
       this.do_sample,
       this.return_dict_in_generate,
       this.skip_special_tokens,
-      this.optionsForGnerator});
+      this.optionsForGnerator,
+      this.use_external_data_format,
+      this.model_file_name,
+      this.useChatTemplate});
 }
 
 enum TransformersBackend { webgl, webgpu, cpu, wasm }
