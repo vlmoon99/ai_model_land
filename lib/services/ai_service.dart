@@ -5,7 +5,9 @@ import 'package:ai_model_land/models/core/task_request_model.dart';
 import 'package:ai_model_land/models/core/task_response_model.dart';
 import 'package:ai_model_land/services/ai_providers/onnx/onnx.dart';
 import 'package:ai_model_land/services/ai_providers/tensor_flow/tensor_flow_lite_interface.dart';
+
 import 'package:ai_model_land/services/ai_providers/transformers/transformers.dart';
+
 import 'package:ai_model_land/services/file_interaction/local-network_service.dart';
 import 'package:ai_model_land/services/platform_info.dart';
 import 'package:ai_model_land/services/provider_ai_service.dart';
@@ -21,12 +23,16 @@ class AiService {
       {required this.networkInteraction,
       required final TensorFlowLite tensorFlowProviderService,
       required final ONNX ONNXProviderService,
+
       required Transformers transformers,
+
       required this.platformInfo}) {
     providerService.putIfAbsent(
         ModelFormat.tflite, () => tensorFlowProviderService);
     providerService.putIfAbsent(ModelFormat.onnx, () => ONNXProviderService);
+
     providerService.putIfAbsent(ModelFormat.transformers, () => transformers);
+
   }
 
   factory AiService.defaultInstance() {
@@ -35,7 +41,9 @@ class AiService {
       networkInteraction: NetworkService.defaultInstance(),
       tensorFlowProviderService: TensorFlowLite.defaultInstance(),
       ONNXProviderService: ONNX.defaultInstance(),
+
       transformers: Transformers.defaultInstance(),
+
     );
   }
   //Base function from where you can run models in you project, you will need to pass the params

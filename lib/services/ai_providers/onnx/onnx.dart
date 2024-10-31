@@ -11,7 +11,9 @@ import 'package:ai_model_land/services/provider_ai_service.dart';
 import 'package:ai_model_land/services/js_engines/interface/js_engine_stub.dart'
     if (dart.library.io) 'package:ai_model_land/services/js_engines/implementation/webview_js_engine.dart'
     if (dart.library.js) 'package:ai_model_land/services/js_engines/implementation/web_js_engine.dart';
+
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../../models/providers/onnx/onnx_respons_model.dart';
@@ -78,6 +80,7 @@ class ONNX implements ProviderAiService {
                 throw Exception("Buffer not found");
               }
             }
+
           case LoadModelWay.fromURL:
             {
               return await loadModelCreateSession(
@@ -86,6 +89,7 @@ class ONNX implements ProviderAiService {
                   onProgressUpdate: onnxRequest.onProgressUpdate,
                   onnxBackend: onnxRequest.onnxBackend!);
             }
+
           default:
             {
               throw Exception(
@@ -101,6 +105,7 @@ class ONNX implements ProviderAiService {
   }
 
   Future<bool> loadModelCreateSession(
+
       {dynamic? modelBuffer,
       String? urlPath,
       int? numThreads,
@@ -109,14 +114,8 @@ class ONNX implements ProviderAiService {
     var session;
     //numThreads recommend 1(by default 1)
     if (urlPath != null) {
-      if (!kIsWeb) {
-        // remove
-        throw Exception(
-            "The model can only be uploaded using the path on the web");
-      } else {
         session = await jsVMService.callJSAsync(
             "window.onnx.createSessionBufferPath($numThreads, '${onnxBackend.toString().split(".").last}', '$urlPath')");
-      }
     } else {
       final isLoad = await loadOnWeb(
           byts: modelBuffer,
@@ -142,14 +141,16 @@ class ONNX implements ProviderAiService {
       {required Uint8List byts,
       required String callFunction,
       Function(double)? onProgressUpdate}) async {
+
     int chunkSize = byts.length ~/ 100;
+
     int offset = 0;
 
     while (offset < byts.length) {
       int end =
           (offset + chunkSize < byts.length) ? offset + chunkSize : byts.length;
       Uint8List chunk = byts.sublist(offset, end);
-      print(chunkSize);
+
       final res =
           await jsVMService.callJS(callFunction + "(${chunk.toString()})");
       offset += chunkSize;
