@@ -43,6 +43,7 @@ async function runModel({ messages , useChatTemplate = false,tokenizerChatOption
         do_sample: do_sample,
         max_new_tokens: max_new_tokens,
         return_dict_in_generate: return_dict_in_generate,
+        return_full_text: false,
       });    
       const decoded = await tokenizer.batch_decode(sequences, {
         skip_special_tokens: skip_special_tokens,
