@@ -34,7 +34,7 @@ class Transformers implements ProviderAiService {
     }
 
     final generator = await jsVMService.callJSAsync(
-        '''window.transformers.loadModel('${transformersRequest.typeLoadModel!.name}',{model_id: '${baseModel.source}', device: '${transformersRequest.backendDevice?.name}', typeModel: '${transformersRequest.typeModel}', dtype: '${transformersRequest.dtype}'})''');
+        '''window.transformers.loadModel('${transformersRequest.typeLoadModel!.name}',{model_id: '${baseModel.source}', device: '${transformersRequest.backendDevice?.name}', typeModel: '${transformersRequest.typeModel}', dtype: '${transformersRequest.dtype}', use_external_data_format: ${transformersRequest.use_external_data_format}, model_file_name: '${transformersRequest.model_file_name}'})''');
     Map<String, dynamic> res = jsonDecode(generator);
     if (res.containsKey("error")) {
       throw Exception("${res["error"]}");
@@ -89,7 +89,7 @@ class Transformers implements ProviderAiService {
   Future<TaskResponseModel> runTaskOnTheModel(TaskRequestModel request) async {
     final transformersRequest = request as TransformersRequestModel;
     final runModel = await jsVMService.callJSAsync(
-        "window.transformers.runModel({ messages: ${transformersRequest.data}, tokenizerChatOptions: ${transformersRequest.tokenizerChatOptions}, max_new_tokens: ${transformersRequest.max_new_tokens}, do_sample: ${transformersRequest.do_sample}, return_dict_in_generate: ${transformersRequest.return_dict_in_generate}, skip_special_tokens: ${transformersRequest.skip_special_tokens}, optionsForGnerator: ${transformersRequest.optionsForGnerator}})");
+        "window.transformers.runModel({ messages: ${transformersRequest.data}, tokenizerChatOptions: ${transformersRequest.tokenizerChatOptions}, max_new_tokens: ${transformersRequest.max_new_tokens}, do_sample: ${transformersRequest.do_sample}, return_dict_in_generate: ${transformersRequest.return_dict_in_generate}, skip_special_tokens: ${transformersRequest.skip_special_tokens}, optionsForGnerator: ${transformersRequest.optionsForGnerator}, useChatTemplate: ${transformersRequest.useChatTemplate}})");
     Map<String, dynamic> res = jsonDecode(runModel);
     if (res.containsKey("error")) {
       throw Exception("${res["error"]}");
