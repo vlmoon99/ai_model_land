@@ -196,7 +196,7 @@ class _HomePageState extends State<HomePage> {
                     onPressed: () {
                       Modular.to.pushNamed('//home/transformers');
                     },
-                    text: 'transformers',
+                    text: 'Transformers',
                   ),
                 ],
               ),
