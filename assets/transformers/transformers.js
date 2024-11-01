@@ -18,6 +18,9 @@ export class Transformers {
             console.log("Model loaded successfully", loadResponse);
             return loadResponse;    
         } catch (error) { 
+            if (this.worker != null) {
+                this.worker.terminate()
+            }
             this.worker = null;
             console.log(`Error: ${error}`);
             throw JSON.stringify({error: error});
@@ -36,6 +39,9 @@ export class Transformers {
             console.log("Model loaded successfully", loadResponse);
             return loadResponse;
         } catch (error) {
+            if (this.worker != null) {
+                this.worker.terminate()
+            }
             this.worker = null;
             console.log(`Error: ${error}`);
             throw JSON.stringify({error: error});

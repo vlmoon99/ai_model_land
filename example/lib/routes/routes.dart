@@ -17,7 +17,6 @@ class _Providers extends RouteClass {
   String onnx = '/onnx';
 
   String transformers = '/transformers';
-
 }
 
 class _ProvidersInteractions extends RouteClass {
@@ -27,6 +26,7 @@ class _ProvidersInteractions extends RouteClass {
   String ageClassification = '/age-classification';
 
   String llm = '/llm';
+  String qwen = '/qwen';
 
   String photoDetectionClassification = "/photo-detection-classification";
   String genderClassification = "/gender-classification";
