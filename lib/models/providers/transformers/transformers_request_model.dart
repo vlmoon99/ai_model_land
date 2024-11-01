@@ -68,3 +68,5 @@ class TransformersRequestModel implements TaskRequestModel {
 enum TransformersBackend { webgl, webgpu, cpu, wasm }
 
 enum TypeLoadModel { standard, text_generation }
+
+enum Dtype { fp32, fp16, q8, int8, uint8, q4, bnb4, q4f16 }

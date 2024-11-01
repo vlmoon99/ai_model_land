@@ -51,7 +51,7 @@ async function runModel({ messages , useChatTemplate = false,tokenizerChatOption
     
       self.postMessage({
         status: "successful",
-        output: decoded,
+        message: decoded,
       });
   
     } catch(error) {

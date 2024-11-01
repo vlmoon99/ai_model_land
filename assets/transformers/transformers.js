@@ -87,6 +87,7 @@ async waitForWorkerMessage() {
         if(this.worker == null || this.typeLoad == null){
             throw JSON.stringify({ error: "You need load model"});
         }
+        console.log("Start running");
         switch (this.typeLoad) {
             case 'standard': 
                 this.worker.postMessage({type: "runModel", data: { messages: messages, optionsForGnerator: optionsForGnerator}});

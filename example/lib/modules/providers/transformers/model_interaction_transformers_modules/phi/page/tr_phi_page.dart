@@ -78,7 +78,10 @@ class _TRPhiPageState extends State<TRPhiPage> {
               "return_dict": "true"
             },
             data: messages,
-            optionsForGnerator: {"max_new_tokens": 128}),
+            max_new_tokens: 128,
+            do_sample: false,
+            return_dict_in_generate: true,
+            skip_special_tokens: true),
         baseModel: baseModel);
   }
 

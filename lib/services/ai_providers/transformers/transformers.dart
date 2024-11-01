@@ -34,7 +34,7 @@ class Transformers implements ProviderAiService {
     }
 
     final generator = await jsVMService.callJSAsync(
-        '''window.transformers.loadModel('${transformersRequest.typeLoadModel!.name}',{model_id: '${baseModel.source}', device: '${transformersRequest.backendDevice?.name}', typeModel: '${transformersRequest.typeModel}', dtype: ${transformersRequest.dtype != null ? "\'${transformersRequest.dtype}\'" : null}, use_external_data_format: ${transformersRequest.use_external_data_format}, model_file_name: '${transformersRequest.model_file_name}', })''');
+        '''window.transformers.loadModel('${transformersRequest.typeLoadModel!.name}',{model_id: '${baseModel.source}', device: '${transformersRequest.backendDevice?.name}', typeModel: ${transformersRequest.typeModel != null ? "\'${transformersRequest.typeModel}\'" : null}, dtype: ${transformersRequest.dtype != null ? "\'${transformersRequest.dtype}\'" : null}, use_external_data_format: ${transformersRequest.use_external_data_format}, model_file_name: ${transformersRequest.model_file_name != null ? "\'${transformersRequest.model_file_name}\'" : null}, })''');
     Map<String, dynamic> res = jsonDecode(generator);
     if (res.containsKey("error")) {
       throw Exception("${res["error"]}");
