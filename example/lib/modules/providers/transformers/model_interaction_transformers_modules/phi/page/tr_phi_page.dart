@@ -61,7 +61,7 @@ class _TRPhiPageState extends State<TRPhiPage> {
     return await _aiModelLand.loadModel(
         request: TransformersRequestModel(
             use_external_data_format: true,
-            dtype: "q4f16",
+            dtype: Dtype.q4f16,
             loadModelWay: LoadModelWay.fromID,
             typeLoadModel: TypeLoadModel.text_generation,
             typeModel: 'text-generation',
@@ -342,7 +342,7 @@ class _TRPhiPageState extends State<TRPhiPage> {
                           ),
                     SizedBox(height: 10),
                     Text(
-                      "The second step is to load the image, choose image and run the model.",
+                      "Also we can stop or restart model if this needs",
                       style: Thems.textStyle,
                     ),
                     SizedBox(height: 10),

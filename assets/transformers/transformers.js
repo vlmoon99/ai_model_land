@@ -1,5 +1,3 @@
-// import { pipeline, AutoTokenizer, AutoModelForCausalLM } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.0";
-
 export class Transformers {
     worker;
     typeLoad;
@@ -27,7 +25,7 @@ export class Transformers {
         }
     }
 
-    async loadPipelineDefault(data){ //'text_generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
+    async loadPipelineDefault(data){
         if (this.worker != null){
             throw new Error("Worker work already");
         }

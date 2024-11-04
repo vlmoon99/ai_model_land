@@ -371,7 +371,7 @@ class _TRLLMPageState extends State<TRLLMPage> {
                           ),
                     SizedBox(height: 10),
                     Text(
-                      "The second step is to load the image, choose image and run the model.",
+                      "Also we can stop or restart model if this needs",
                       style: Thems.textStyle,
                     ),
                     SizedBox(height: 10),

@@ -24,7 +24,7 @@ class TransformersRequestModel implements TaskRequestModel {
 
   TransformersBackend? backendDevice;
 
-  String? dtype;
+  Dtype? dtype;
 
   Object? tokenizerChatOptions;
 

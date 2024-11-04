@@ -24,7 +24,6 @@ async function loadPipelineDefault({typeModel, model_id, device, dtype = null, m
 
 async function runModel({messages, optionsForGnerator = null}){ //'text-generation', 'onnx-community/Llama-3.2-1B-Instruct-q4f16', 'webgpu', { role: "system", content: "You are a helpful assistant." },{ role: "user", content: "What is the capital of France?" }, { max_new_tokens: 128 }
     try{
-      // Generate a response
       const output = await generator(messages, optionsForGnerator);
       console.log(output);
       self.postMessage({
